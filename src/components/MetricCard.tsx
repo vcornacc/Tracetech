@@ -1,6 +1,8 @@
 import { ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { ChevronRight } from "lucide-react";
 
 interface MetricCardProps {
   title: string;
@@ -9,6 +11,7 @@ interface MetricCardProps {
   icon: ReactNode;
   trend?: { value: number; label: string };
   variant?: "default" | "cyan" | "amber" | "critical" | "success";
+  href?: string;
 }
 
 const variantStyles = {
@@ -35,9 +38,18 @@ const iconColorStyles = {
   success: "text-success",
 };
 
-export function MetricCard({ title, value, subtitle, icon, trend, variant = "default" }: MetricCardProps) {
+export function MetricCard({ title, value, subtitle, icon, trend, variant = "default", href }: MetricCardProps) {
+  const navigate = useNavigate();
+
   return (
-    <Card className={cn("transition-all hover:border-primary/40", variantStyles[variant])}>
+    <Card
+      className={cn(
+        "transition-all hover:border-primary/40",
+        variantStyles[variant],
+        href && "cursor-pointer hover:bg-secondary/20"
+      )}
+      onClick={href ? () => navigate(href) : undefined}
+    >
       <CardContent className="p-5">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -50,8 +62,11 @@ export function MetricCard({ title, value, subtitle, icon, trend, variant = "def
               </p>
             )}
           </div>
-          <div className={cn("p-2.5 rounded-lg", iconBgStyles[variant])}>
-            <div className={iconColorStyles[variant]}>{icon}</div>
+          <div className="flex flex-col items-end gap-2">
+            <div className={cn("p-2.5 rounded-lg", iconBgStyles[variant])}>
+              <div className={iconColorStyles[variant]}>{icon}</div>
+            </div>
+            {href && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
           </div>
         </div>
       </CardContent>

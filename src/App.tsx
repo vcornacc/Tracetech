@@ -8,6 +8,7 @@ import { AppLayout } from "@/components/AppLayout";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Materials from "./pages/Materials";
+import MaterialDetail from "./pages/MaterialDetail";
 import BomRisk from "./pages/BomRisk";
 import Simulation from "./pages/Simulation";
 import Financial from "./pages/Financial";
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/materials" element={<ProtectedRoute><Materials /></ProtectedRoute>} />
+            <Route path="/materials/:name" element={<ProtectedRoute><MaterialDetail /></ProtectedRoute>} />
             <Route path="/bom" element={<ProtectedRoute><BomRisk /></ProtectedRoute>} />
             <Route path="/simulation" element={<ProtectedRoute><Simulation /></ProtectedRoute>} />
             <Route path="/financial" element={<ProtectedRoute><Financial /></ProtectedRoute>} />

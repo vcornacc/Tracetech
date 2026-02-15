@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Database, Search, MapPin, Recycle, Activity } from "lucide-react";
+import { Database, Search, MapPin, Recycle, Activity, ChevronRight } from "lucide-react";
 import {
   ResponsiveContainer,
   RadarChart,
@@ -29,13 +30,17 @@ const clusterBadgeVariant: Record<string, string> = {
 };
 
 function MaterialCard({ material }: { material: CriticalMaterial }) {
+  const navigate = useNavigate();
   const cluster = clusterInfo[material.cluster];
   const avgRisk = Math.round(
     material.riskProfile.reduce((sum, r) => sum + r.value, 0) / material.riskProfile.length
   );
 
   return (
-    <Card className="border-border/50 hover:border-border/80 transition-colors">
+    <Card
+      className="border-border/50 hover:border-primary/40 transition-colors cursor-pointer"
+      onClick={() => navigate(`/materials/${material.name.toLowerCase()}`)}
+    >
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           <div>
