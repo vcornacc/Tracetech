@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DownloadReportSection } from "@/components/DownloadReportSection";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,6 +22,7 @@ import {
   Tooltip,
 } from "recharts";
 import { criticalMaterials, clusterInfo, type CriticalMaterial } from "@/data/materialsData";
+import { downloadMaterialsCSV } from "@/lib/reportDownloads";
 
 const clusterBadgeVariant: Record<string, string> = {
   systemic: "bg-[hsl(0,72%,55%)]/15 text-[hsl(0,72%,65%)] border-[hsl(0,72%,55%)]/30",
@@ -217,6 +219,18 @@ export default function Materials() {
           </CardContent>
         </Card>
       )}
+      {/* Download */}
+      <DownloadReportSection
+        title="Esporta Materiali"
+        actions={[
+          {
+            label: `Esporta ${filtered.length} materiali (.csv)`,
+            description: "Esporta lista filtrata con profili di rischio",
+            icon: "csv",
+            onClick: () => downloadMaterialsCSV(filtered),
+          },
+        ]}
+      />
     </div>
   );
 }
