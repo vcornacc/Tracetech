@@ -11,7 +11,12 @@ import Materials from "./pages/Materials";
 import MaterialDetail from "./pages/MaterialDetail";
 import BomRisk from "./pages/BomRisk";
 import Simulation from "./pages/Simulation";
-import Financial from "./pages/Financial";
+import ECUInventory from "./pages/ECUInventory";
+import ECUDetail from "./pages/ECUDetail";
+import DecisionEngine from "./pages/DecisionEngine";
+import FinancialEngine from "./pages/FinancialEngine";
+import ExecutiveDashboard from "./pages/ExecutiveDashboard";
+import HaaSReadiness from "./pages/HaaSReadiness";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,7 +55,12 @@ const App = () => (
             <Route path="/materials/:name" element={<ProtectedRoute><MaterialDetail /></ProtectedRoute>} />
             <Route path="/bom" element={<ProtectedRoute><BomRisk /></ProtectedRoute>} />
             <Route path="/simulation" element={<ProtectedRoute><Simulation /></ProtectedRoute>} />
-            <Route path="/financial" element={<ProtectedRoute><Financial /></ProtectedRoute>} />
+            <Route path="/ecu" element={<ProtectedRoute><ECUInventory /></ProtectedRoute>} />
+            <Route path="/ecu/:id" element={<ProtectedRoute><ECUDetail /></ProtectedRoute>} />
+            <Route path="/decision-engine" element={<ProtectedRoute><DecisionEngine /></ProtectedRoute>} />
+            <Route path="/financial" element={<ProtectedRoute><FinancialEngine /></ProtectedRoute>} />
+            <Route path="/executive" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
+            <Route path="/haas" element={<ProtectedRoute><HaaSReadiness /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
