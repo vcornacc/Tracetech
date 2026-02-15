@@ -4,11 +4,11 @@ import {
   FileUp,
   FlaskConical,
   DollarSign,
-  Shield,
   LogOut,
   Settings,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import boschLogo from "@/assets/bosch-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar,
@@ -37,9 +37,8 @@ export function AppSidebar() {
     <Sidebar className="border-r border-border/50">
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center glow-cyan">
-            <Shield className="w-5 h-5 text-primary" />
-          </div>
+          <img src={boschLogo} alt="Bosch" className="h-7 brightness-0 invert opacity-90" />
+          <div className="h-5 w-px bg-border" />
           <div>
             <h2 className="text-sm font-bold tracking-tight text-gradient-cyan">CRIS</h2>
             <p className="text-[10px] text-muted-foreground leading-tight">Risk Intelligence</p>
