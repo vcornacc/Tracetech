@@ -1,4 +1,5 @@
 import { MetricCard } from "@/components/MetricCard";
+import { DownloadReportSection } from "@/components/DownloadReportSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Shield,
@@ -29,6 +30,7 @@ import {
 } from "recharts";
 
 import { criticalMaterials, clusterInfo } from "@/data/materialsData";
+import { downloadDashboardCSV, downloadDashboardReport } from "@/lib/reportDownloads";
 
 // Derive dashboard data from real materials
 const matrixData = criticalMaterials.map((m) => ({
@@ -268,6 +270,14 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+      {/* Download Report */}
+      <DownloadReportSection
+        title="Esporta Report Executive"
+        actions={[
+          { label: "Report Completo (.txt)", description: "Report executive testuale", icon: "txt", onClick: downloadDashboardReport },
+          { label: "Dati Materiali (.csv)", description: "Esporta dati in CSV", icon: "csv", onClick: downloadDashboardCSV },
+        ]}
+      />
     </div>
   );
 }

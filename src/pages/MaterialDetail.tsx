@@ -30,6 +30,8 @@ import {
   Cell,
 } from "recharts";
 import { criticalMaterials, clusterInfo } from "@/data/materialsData";
+import { DownloadReportSection } from "@/components/DownloadReportSection";
+import { downloadMaterialDetailReport, downloadMaterialDetailCSV } from "@/lib/reportDownloads";
 
 const clusterBadgeVariant: Record<string, string> = {
   systemic: "bg-[hsl(0,72%,55%)]/15 text-[hsl(0,72%,65%)] border-[hsl(0,72%,55%)]/30",
@@ -361,6 +363,14 @@ export default function MaterialDetail() {
           </div>
         </CardContent>
       </Card>
+      {/* Download Report */}
+      <DownloadReportSection
+        title={`Esporta Report ${material.name}`}
+        actions={[
+          { label: "Report Dettagliato (.txt)", description: "Report completo con profilo di rischio", icon: "txt", onClick: () => downloadMaterialDetailReport(material) },
+          { label: "Dati (.csv)", description: "Esporta dati materiale", icon: "csv", onClick: () => downloadMaterialDetailCSV(material) },
+        ]}
+      />
     </div>
   );
 }
