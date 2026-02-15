@@ -28,44 +28,34 @@ import {
   PolarRadiusAxis,
 } from "recharts";
 
-// Demo data for criticality matrix
-const matrixData = [
-  { name: "Cobalto", yale: 82, euSR: 4.2, cluster: "systemic" },
-  { name: "Litio", yale: 75, euSR: 3.8, cluster: "systemic" },
-  { name: "Terre Rare (Nd)", yale: 88, euSR: 4.5, cluster: "systemic" },
-  { name: "Platino", yale: 70, euSR: 3.5, cluster: "product" },
-  { name: "Tantalio", yale: 65, euSR: 3.2, cluster: "product" },
-  { name: "Gallio", yale: 62, euSR: 2.8, cluster: "sectoral" },
-  { name: "Indio", yale: 58, euSR: 3.0, cluster: "sectoral" },
-  { name: "Tungsteno", yale: 55, euSR: 2.5, cluster: "operational" },
-  { name: "Vanadio", yale: 48, euSR: 2.2, cluster: "operational" },
-  { name: "Magnesio", yale: 45, euSR: 2.0, cluster: "operational" },
-  { name: "Germanio", yale: 72, euSR: 3.6, cluster: "product" },
-  { name: "Niobio", yale: 68, euSR: 4.0, cluster: "systemic" },
-];
+import { criticalMaterials, clusterInfo } from "@/data/materialsData";
 
-const clusterColors: Record<string, string> = {
-  systemic: "hsl(0, 72%, 55%)",
-  product: "hsl(38, 92%, 55%)",
-  sectoral: "hsl(190, 85%, 50%)",
-  operational: "hsl(160, 70%, 45%)",
-};
+// Derive dashboard data from real materials
+const matrixData = criticalMaterials.map((m) => ({
+  name: m.name,
+  yale: m.yaleScore,
+  euSR: m.euSRxEI,
+  cluster: m.cluster,
+}));
 
-const clusterBarData = [
-  { name: "Systemic Dual", count: 4, fill: "hsl(0, 72%, 55%)" },
-  { name: "Product-Embedded", count: 3, fill: "hsl(38, 92%, 55%)" },
-  { name: "Sectoral Strategic", count: 2, fill: "hsl(190, 85%, 50%)" },
-  { name: "Operational", count: 3, fill: "hsl(160, 70%, 45%)" },
-];
+const clusterColors: Record<string, string> = Object.fromEntries(
+  Object.entries(clusterInfo).map(([k, v]) => [k, v.color])
+);
 
-const radarData = [
-  { subject: "Supply Risk", A: 85 },
-  { subject: "Geopolitica", A: 72 },
-  { subject: "Prezzo Vol.", A: 68 },
-  { subject: "Riciclo Gap", A: 55 },
-  { subject: "ESG Risk", A: 45 },
-  { subject: "Concentr. HHI", A: 78 },
-];
+const clusterBarData = Object.entries(clusterInfo).map(([key, info]) => ({
+  name: info.label.split(" ").slice(0, 2).join(" "),
+  count: criticalMaterials.filter((m) => m.cluster === key).length,
+  fill: info.color,
+}));
+
+// Aggregate risk profile across all materials (weighted average)
+const radarData = criticalMaterials[0].riskProfile.map((_, i) => {
+  const subject = criticalMaterials[0].riskProfile[i].subject;
+  const avg = Math.round(
+    criticalMaterials.reduce((sum, m) => sum + m.riskProfile[i].value, 0) / criticalMaterials.length
+  );
+  return { subject, A: avg };
+});
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload?.length) {
@@ -96,14 +86,14 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Materiali Monitorati"
-          value={12}
-          subtitle="su database CRM"
+          value={criticalMaterials.length}
+          subtitle="da Bosch Circuit BOM"
           icon={<Database className="w-5 h-5" />}
           variant="cyan"
         />
         <MetricCard
           title="Alta Esposizione"
-          value={4}
+          value={criticalMaterials.filter((m) => m.yaleScore >= 60 && (m.cluster === "systemic" || m.cluster === "product")).length}
           subtitle="Yale ≥ 60 + EU Critical"
           icon={<AlertTriangle className="w-5 h-5" />}
           variant="critical"
