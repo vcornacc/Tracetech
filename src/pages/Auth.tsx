@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
+import boschLogo from "@/assets/bosch-logo.png";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -45,10 +46,8 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-8">
         {/* Logo */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 glow-cyan mb-4">
-            <Shield className="w-8 h-8 text-primary" />
-          </div>
+        <div className="text-center space-y-3">
+          <img src={boschLogo} alt="Bosch" className="h-10 mx-auto brightness-0 invert opacity-90" />
           <h1 className="text-3xl font-bold tracking-tight">
             <span className="text-gradient-cyan">CRIS</span>
           </h1>
