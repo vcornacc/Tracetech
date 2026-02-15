@@ -90,6 +90,7 @@ export default function Dashboard() {
           subtitle="da Bosch Circuit BOM"
           icon={<Database className="w-5 h-5" />}
           variant="cyan"
+          href="/materials"
         />
         <MetricCard
           title="Alta Esposizione"
