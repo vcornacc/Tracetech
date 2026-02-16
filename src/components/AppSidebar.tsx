@@ -42,7 +42,7 @@ export function AppSidebar() {
     <Sidebar className="border-r border-border/50">
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center gap-3">
-          <img src={boschLogo} alt="Bosch" className="h-7 brightness-0 invert opacity-90" />
+          <img src={boschLogo} alt="Bosch" className="h-7" />
           <div className="h-5 w-px bg-border" />
           <div>
             <h2 className="text-sm font-bold tracking-tight text-gradient-cyan">BCDP</h2>
