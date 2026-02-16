@@ -1,8 +1,5 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Loader2 } from "lucide-react";
 import boschLogo from "@/assets/bosch-logo.png";
@@ -43,78 +40,85 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className="min-h-screen flex items-center justify-center bg-primary p-4">
       <div className="w-full max-w-md space-y-8">
         {/* Logo */}
         <div className="text-center space-y-3">
-          <img src={boschLogo} alt="Bosch" className="h-10 mx-auto brightness-0 invert opacity-90" />
-          <h1 className="text-3xl font-bold tracking-tight">
-            <span className="text-gradient-cyan">CRIS</span>
+          <img src={boschLogo} alt="Bosch" className="h-12 mx-auto brightness-0 invert" />
+          <h1 className="text-3xl font-bold tracking-tight text-primary-foreground">
+            BCDP
           </h1>
-          <p className="text-sm text-muted-foreground">
-            CRM Circular Risk Intelligence System
+          <p className="text-sm text-primary-foreground/70">
+            Bosch Circular Digital Platform
           </p>
         </div>
 
-        <Card className="border-border/50">
-          <CardHeader className="text-center pb-4">
-            <CardTitle className="text-xl">
+        <div className="bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20 rounded-xl p-6">
+          <div className="text-center pb-4">
+            <h2 className="text-xl font-semibold text-primary-foreground">
               {isLogin ? "Accedi alla piattaforma" : "Crea un account"}
-            </CardTitle>
-            <CardDescription>
+            </h2>
+            <p className="text-sm text-primary-foreground/60 mt-1">
               {isLogin
                 ? "Inserisci le tue credenziali per accedere"
-                : "Registrati per iniziare ad analizzare il rischio CRM"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!isLogin && (
-                <Input
-                  placeholder="Nome completo"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required={!isLogin}
-                />
-              )}
-              <Input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : (
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                )}
-                {isLogin ? "Accedi" : "Registrati"}
-              </Button>
-            </form>
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                {isLogin ? "Non hai un account? Registrati" : "Hai già un account? Accedi"}
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+                : "Registrati per iniziare"}
+            </p>
+          </div>
 
-        <p className="text-xs text-center text-muted-foreground/60">
-          Piattaforma di governance del rischio strutturale per materie prime critiche
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!isLogin && (
+              <input
+                placeholder="Nome completo"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                required={!isLogin}
+                className="w-full px-4 py-3 rounded-lg bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary-foreground/30"
+              />
+            )}
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-4 py-3 rounded-lg bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary-foreground/30"
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={6}
+              className="w-full px-4 py-3 rounded-lg bg-primary-foreground/10 border border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary-foreground/30"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3 rounded-lg bg-primary-foreground text-primary font-semibold flex items-center justify-center gap-2 hover:bg-primary-foreground/90 transition-colors disabled:opacity-50"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ArrowRight className="w-4 h-4" />
+              )}
+              {isLogin ? "Accedi" : "Registrati"}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <button
+              type="button"
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-sm text-primary-foreground/60 hover:text-primary-foreground transition-colors"
+            >
+              {isLogin ? "Non hai un account? Registrati" : "Hai già un account? Accedi"}
+            </button>
+          </div>
+        </div>
+
+        <p className="text-xs text-center text-primary-foreground/40">
+          Piattaforma di governance circolare per materie prime critiche
         </p>
       </div>
     </div>
