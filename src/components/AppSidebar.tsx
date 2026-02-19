@@ -4,7 +4,6 @@ import {
   FlaskConical, FileUp, Globe,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import boschLogo from "@/assets/bosch-logo.png";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -42,8 +41,6 @@ export function AppSidebar() {
     <Sidebar className="border-r border-border/50">
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center gap-3">
-          <img src={boschLogo} alt="Bosch" className="h-7" />
-          <div className="h-5 w-px bg-border" />
           <div>
             <h2 className="text-sm font-bold tracking-tight text-gradient-cyan">BCDP</h2>
             <p className="text-[10px] text-muted-foreground leading-tight">Circular Digital Platform</p>
