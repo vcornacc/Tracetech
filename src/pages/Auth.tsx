@@ -2,7 +2,6 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Loader2 } from "lucide-react";
-import boschLogo from "@/assets/bosch-logo.png";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
@@ -44,7 +43,6 @@ export default function Auth() {
       <div className="w-full max-w-md space-y-8">
         {/* Logo */}
         <div className="text-center space-y-3">
-          <img src={boschLogo} alt="Bosch" className="h-12 mx-auto brightness-0 invert" />
           <h1 className="text-3xl font-bold tracking-tight text-primary-foreground">
             BCDP
           </h1>
