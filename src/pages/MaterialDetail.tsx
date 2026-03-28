@@ -29,7 +29,8 @@ import {
   CartesianGrid,
   Cell,
 } from "recharts";
-import { criticalMaterials, clusterInfo } from "@/data/materialsData";
+import { clusterInfo } from "@/data/materialsData";
+import { useData } from "@/hooks/useData";
 import { DownloadReportSection } from "@/components/DownloadReportSection";
 import { downloadMaterialDetailReport, downloadMaterialDetailCSV } from "@/lib/reportDownloads";
 
@@ -137,6 +138,7 @@ function getRiskLevel(value: number) {
 export default function MaterialDetail() {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
+  const { materials: criticalMaterials } = useData();
 
   const material = criticalMaterials.find(
     (m) => m.name.toLowerCase() === name?.toLowerCase()

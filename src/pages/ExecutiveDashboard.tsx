@@ -10,8 +10,8 @@ import {
   Cell, BarChart, Bar, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   PieChart, Pie, Treemap,
 } from "recharts";
-import { criticalMaterials, clusterInfo } from "@/data/materialsData";
-import { ecuInventory, circularTriggers } from "@/data/ecuData";
+import { clusterInfo } from "@/data/materialsData";
+import { useData } from "@/hooks/useData";
 
 // Geographic dependency data
 const geoDependency = [
@@ -37,15 +37,17 @@ const recoveryKPIs = [
   { label: "Indio Recuperato", value: 0.3, unit: "kg/mese", target: 0.6, color: "hsl(270,60%,60%)" },
 ];
 
-const clusterBarData = Object.entries(clusterInfo).map(([key, info]) => ({
-  name: info.label.split(" ").slice(0, 2).join(" "),
-  count: criticalMaterials.filter((m) => m.cluster === key).length,
-  fill: info.color,
-}));
-
-const activeAlerts = circularTriggers.filter((t) => t.status === "active" || t.status === "monitoring");
-
 export default function ExecutiveDashboard() {
+  const { materials: criticalMaterials, ecuInventory, circularTriggers } = useData();
+
+  const clusterBarData = Object.entries(clusterInfo).map(([key, info]) => ({
+    name: info.label.split(" ").slice(0, 2).join(" "),
+    count: criticalMaterials.filter((m) => m.cluster === key).length,
+    fill: info.color,
+  }));
+
+  const activeAlerts = circularTriggers.filter((t) => t.status === "active" || t.status === "monitoring");
+
   const totalECU = ecuInventory.length;
   const recoveredECU = ecuInventory.filter((e) => e.status === "recovered").length;
   const avgRiskScore = Math.round(ecuInventory.reduce((s, e) => s + e.riskScore, 0) / totalECU);
@@ -57,7 +59,7 @@ export default function ExecutiveDashboard() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Executive Dashboard</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Governance circolare — panoramica strategica BCDP
+          Governance circolare — panoramica strategica TraceTech
         </p>
       </div>
 

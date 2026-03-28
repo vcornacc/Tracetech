@@ -14,7 +14,8 @@ import { MetricCard } from "@/components/MetricCard";
 import {
   Cpu, Search, MapPin, Activity, Recycle, Shield, AlertTriangle, ChevronRight, Package,
 } from "lucide-react";
-import { ecuInventory, type ECU } from "@/data/ecuData";
+import { type ECU } from "@/data/ecuData";
+import { useData } from "@/hooks/useData";
 
 const statusConfig: Record<ECU["status"], { label: string; class: string }> = {
   active: { label: "Attivo", class: "bg-success/15 text-success border-success/30" },
@@ -34,6 +35,7 @@ const pathConfig: Record<ECU["circularPath"], { label: string; class: string }> 
 
 export default function ECUInventory() {
   const navigate = useNavigate();
+  const { ecuInventory } = useData();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [pathFilter, setPathFilter] = useState("all");

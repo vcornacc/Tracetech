@@ -42,8 +42,8 @@ export function AppSidebar() {
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center gap-3">
           <div>
-            <h2 className="text-sm font-bold tracking-tight text-gradient-cyan">BCDP</h2>
-            <p className="text-[10px] text-muted-foreground leading-tight">Circular Digital Platform</p>
+            <h2 className="text-sm font-bold tracking-tight text-gradient-cyan">TraceTech</h2>
+            <p className="text-[10px] text-muted-foreground leading-tight">CRM Intelligence Platform</p>
           </div>
         </div>
       </div>

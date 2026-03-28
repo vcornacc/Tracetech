@@ -13,7 +13,8 @@ import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell,
   PieChart, Pie, Tooltip,
 } from "recharts";
-import { ecuInventory, circularTriggers, type CircularTrigger } from "@/data/ecuData";
+import { type CircularTrigger } from "@/data/ecuData";
+import { useData } from "@/hooks/useData";
 
 const triggerIcons: Record<string, typeof Zap> = {
   eol_vehicle: Cpu,
@@ -30,23 +31,24 @@ const severityConfig: Record<string, { label: string; class: string }> = {
   critical: { label: "Critico", class: "bg-destructive/15 text-destructive border-destructive/30" },
 };
 
-const pathDistribution = [
-  { name: "Repair", value: ecuInventory.filter((e) => e.circularPath === "repair").length, color: "hsl(160,70%,45%)" },
-  { name: "Reuse", value: ecuInventory.filter((e) => e.circularPath === "reuse").length, color: "hsl(190,85%,50%)" },
-  { name: "Refurbish", value: ecuInventory.filter((e) => e.circularPath === "refurbish").length, color: "hsl(38,92%,55%)" },
-  { name: "Selective Recovery", value: ecuInventory.filter((e) => e.circularPath === "selective_recovery").length, color: "hsl(270,60%,60%)" },
-  { name: "Pending", value: ecuInventory.filter((e) => e.circularPath === "pending").length, color: "hsl(215,15%,40%)" },
-];
-
-const clusterDecisionMatrix = [
-  { cluster: "Systemic Dual", priority: "Selective Recovery", rationale: "Massimizzare recupero CRM ad alto rischio", urgency: 95 },
-  { cluster: "Product-Embedded", priority: "Refurbish", rationale: "Estendere vita utile componente con CRM integrati", urgency: 75 },
-  { cluster: "Sectoral Strategic", priority: "Reuse", rationale: "Riutilizzo diretto in applicazioni settoriali", urgency: 60 },
-  { cluster: "Operational Backbone", priority: "Repair", rationale: "Manutenzione cost-effective, basso rischio CRM", urgency: 40 },
-];
-
 export default function DecisionEngine() {
+  const { ecuInventory, circularTriggers } = useData();
   const [statusFilter, setStatusFilter] = useState("all");
+
+  const pathDistribution = [
+    { name: "Repair", value: ecuInventory.filter((e) => e.circularPath === "repair").length, color: "hsl(160,70%,45%)" },
+    { name: "Reuse", value: ecuInventory.filter((e) => e.circularPath === "reuse").length, color: "hsl(190,85%,50%)" },
+    { name: "Refurbish", value: ecuInventory.filter((e) => e.circularPath === "refurbish").length, color: "hsl(38,92%,55%)" },
+    { name: "Selective Recovery", value: ecuInventory.filter((e) => e.circularPath === "selective_recovery").length, color: "hsl(270,60%,60%)" },
+    { name: "Pending", value: ecuInventory.filter((e) => e.circularPath === "pending").length, color: "hsl(215,15%,40%)" },
+  ];
+
+  const clusterDecisionMatrix = [
+    { cluster: "Systemic Dual", priority: "Selective Recovery", rationale: "Massimizzare recupero CRM ad alto rischio", urgency: 95 },
+    { cluster: "Product-Embedded", priority: "Refurbish", rationale: "Estendere vita utile componente con CRM integrati", urgency: 75 },
+    { cluster: "Sectoral Strategic", priority: "Reuse", rationale: "Riutilizzo diretto in applicazioni settoriali", urgency: 60 },
+    { cluster: "Operational Backbone", priority: "Repair", rationale: "Manutenzione cost-effective, basso rischio CRM", urgency: 40 },
+  ];
 
   const filteredTriggers = circularTriggers.filter(
     (t) => statusFilter === "all" || t.status === statusFilter

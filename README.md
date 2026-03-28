@@ -1,73 +1,55 @@
-# Welcome to your Lovable project
+# TraceTech
 
-## Project info
+Single web application for Critical Raw Materials intelligence in automotive electronics.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## One App Architecture
 
-## How can I edit this code?
+- Main app: this root project (Vite + React)
+- URL locale stabile: `http://127.0.0.1:5173/`
+- Public URL target (GitHub Pages): `https://vcornacc.github.io/Tracetech/`
 
-There are several ways of editing your application.
+The `next-app/` folder can be considered legacy/experimental and is not required to run TraceTech.
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Quick Start
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm install
+npm run dev:tracetech
 ```
 
-**Edit a file directly in GitHub**
+Open in browser:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- `http://127.0.0.1:5173/`
 
-**Use GitHub Codespaces**
+## Useful Commands
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- `npm run dev:tracetech`: run local app on fixed URL
+- `npm run dev:tracetech:open`: run and open browser automatically
+- `npm run build`: production build
+- `npm run preview`: preview production build locally
+- `npm run test`: run tests
 
-## What technologies are used for this project?
+## Deploy With URL (Professional Setup)
 
-This project is built with:
+This repository includes a GitHub Actions workflow that automatically deploys the app to GitHub Pages on push to `main`:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Workflow file: `.github/workflows/deploy-pages.yml`
+- Static base path is configured in `vite.config.ts` for Pages.
 
-## How can I deploy this project?
+### First-time GitHub setup
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+1. Push this repository to GitHub.
+2. In GitHub repository settings, enable Pages and set Source to `GitHub Actions`.
+3. Push to `main` (or run workflow manually).
 
-## Can I connect a custom domain to my Lovable project?
+After deployment, the application is reachable at:
 
-Yes, you can!
+- `https://vcornacc.github.io/Tracetech/`
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Tech Stack
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+- React 18 + TypeScript
+- Vite 5
+- Tailwind CSS + shadcn/ui
+- Supabase
+- TanStack React Query

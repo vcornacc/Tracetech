@@ -14,7 +14,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <SidebarTrigger />
               <div className="h-4 w-px bg-border" />
               <span className="text-xs text-muted-foreground font-mono">
-                BCDP v2.0
+                TraceTech v1.0
               </span>
             </div>
             <div className="flex items-center gap-2">

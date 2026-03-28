@@ -11,8 +11,8 @@ import {
   ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, Tooltip, PieChart, Pie,
 } from "recharts";
-import { ecuInventory } from "@/data/ecuData";
-import { criticalMaterials, clusterInfo } from "@/data/materialsData";
+import { clusterInfo } from "@/data/materialsData";
+import { useData } from "@/hooks/useData";
 
 const statusLabels: Record<string, string> = {
   active: "Attivo", maintenance: "Manutenzione", eol: "Fine Vita",
@@ -30,6 +30,7 @@ const eventIcons: Record<string, typeof Cpu> = {
 export default function ECUDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { ecuInventory, materials: criticalMaterials } = useData();
   const ecu = ecuInventory.find((e) => e.id === id);
 
   if (!ecu) {

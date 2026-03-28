@@ -29,35 +29,13 @@ import {
   PolarRadiusAxis,
 } from "recharts";
 
-import { criticalMaterials, clusterInfo } from "@/data/materialsData";
+import { criticalMaterials as fallbackMaterials, clusterInfo } from "@/data/materialsData";
+import { useData } from "@/hooks/useData";
 import { downloadDashboardCSV, downloadDashboardReport } from "@/lib/reportDownloads";
-
-// Derive dashboard data from real materials
-const matrixData = criticalMaterials.map((m) => ({
-  name: m.name,
-  yale: m.yaleScore,
-  euSR: m.euSRxEI,
-  cluster: m.cluster,
-}));
 
 const clusterColors: Record<string, string> = Object.fromEntries(
   Object.entries(clusterInfo).map(([k, v]) => [k, v.color])
 );
-
-const clusterBarData = Object.entries(clusterInfo).map(([key, info]) => ({
-  name: info.label.split(" ").slice(0, 2).join(" "),
-  count: criticalMaterials.filter((m) => m.cluster === key).length,
-  fill: info.color,
-}));
-
-// Aggregate risk profile across all materials (weighted average)
-const radarData = criticalMaterials[0].riskProfile.map((_, i) => {
-  const subject = criticalMaterials[0].riskProfile[i].subject;
-  const avg = Math.round(
-    criticalMaterials.reduce((sum, m) => sum + m.riskProfile[i].value, 0) / criticalMaterials.length
-  );
-  return { subject, A: avg };
-});
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload?.length) {
@@ -74,6 +52,30 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function Dashboard() {
+  const { materials: criticalMaterials, dataSource } = useData();
+
+  const matrixData = criticalMaterials.map((m) => ({
+    name: m.name,
+    yale: m.yaleScore,
+    euSR: m.euSRxEI,
+    cluster: m.cluster,
+  }));
+
+  const clusterBarData = Object.entries(clusterInfo).map(([key, info]) => ({
+    name: info.label.split(" ").slice(0, 2).join(" "),
+    count: criticalMaterials.filter((m) => m.cluster === key).length,
+    fill: info.color,
+  }));
+
+  const radarData = criticalMaterials.length > 0
+    ? criticalMaterials[0].riskProfile.map((_, i) => {
+        const subject = criticalMaterials[0].riskProfile[i].subject;
+        const avg = Math.round(
+          criticalMaterials.reduce((sum, m) => sum + m.riskProfile[i].value, 0) / criticalMaterials.length
+        );
+        return { subject, A: avg };
+      })
+    : [];
   return (
     <div className="space-y-6">
       {/* Header */}

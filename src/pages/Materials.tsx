@@ -21,7 +21,8 @@ import {
   PolarRadiusAxis,
   Tooltip,
 } from "recharts";
-import { criticalMaterials, clusterInfo, type CriticalMaterial } from "@/data/materialsData";
+import { clusterInfo, type CriticalMaterial } from "@/data/materialsData";
+import { useData } from "@/hooks/useData";
 import { downloadMaterialsCSV } from "@/lib/reportDownloads";
 
 const clusterBadgeVariant: Record<string, string> = {
@@ -128,6 +129,7 @@ function MaterialCard({ material }: { material: CriticalMaterial }) {
 }
 
 export default function Materials() {
+  const { materials: criticalMaterials } = useData();
   const [search, setSearch] = useState("");
   const [clusterFilter, setClusterFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("yaleScore");

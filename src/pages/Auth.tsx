@@ -44,10 +44,10 @@ export default function Auth() {
         {/* Logo */}
         <div className="text-center space-y-3">
           <h1 className="text-3xl font-bold tracking-tight text-primary-foreground">
-            BCDP
+            TraceTech
           </h1>
           <p className="text-sm text-primary-foreground/70">
-            Bosch Circular Digital Platform
+            Critical Raw Materials Intelligence Platform
           </p>
         </div>
 
