@@ -129,10 +129,10 @@ const riskColors = {
 };
 
 function getRiskLevel(value: number) {
-  if (value >= 70) return { label: "CRITICO", color: "hsl(0, 72%, 55%)" };
-  if (value >= 50) return { label: "ELEVATO", color: "hsl(38, 92%, 55%)" };
-  if (value >= 30) return { label: "MODERATO", color: "hsl(190, 85%, 50%)" };
-  return { label: "BASSO", color: "hsl(160, 70%, 45%)" };
+  if (value >= 70) return { label: "CRITICAL", color: "hsl(0, 72%, 55%)" };
+  if (value >= 50) return { label: "HIGH", color: "hsl(38, 92%, 55%)" };
+  if (value >= 30) return { label: "MEDIUM", color: "hsl(190, 85%, 50%)" };
+  return { label: "LOW", color: "hsl(160, 70%, 45%)" };
 }
 
 export default function MaterialDetail() {
@@ -148,9 +148,9 @@ export default function MaterialDetail() {
     return (
       <div className="space-y-6">
         <Button variant="ghost" size="sm" onClick={() => navigate("/materials")}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Torna ai materiali
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back to materials
         </Button>
-        <p className="text-muted-foreground">Materiale non trovato.</p>
+        <p className="text-muted-foreground">Material not found.</p>
       </div>
     );
   }
@@ -159,12 +159,12 @@ export default function MaterialDetail() {
   const avgRisk = Math.round(
     material.riskProfile.reduce((sum, r) => sum + r.value, 0) / material.riskProfile.length
   );
-  const geoRisk = material.riskProfile.find((r) => r.subject === "Geopolitica")?.value ?? 0;
+  const geoRisk = material.riskProfile.find((r) => r.subject === "Geopolitical")?.value ?? 0;
   const supplyRisk = material.riskProfile.find((r) => r.subject === "Supply Risk")?.value ?? 0;
   const suppliers = suppliersData[material.name] || [
-    { name: "Fornitore Generico 1", country: material.topProducers[0] || "N/A", share: 40, risk: "medium" as const },
-    { name: "Fornitore Generico 2", country: material.topProducers[1] || "N/A", share: 35, risk: "low" as const },
-    { name: "Fornitore Generico 3", country: material.topProducers[2] || "N/A", share: 25, risk: "low" as const },
+    { name: "Generic Supplier 1", country: material.topProducers[0] || "N/A", share: 40, risk: "medium" as const },
+    { name: "Generic Supplier 2", country: material.topProducers[1] || "N/A", share: 35, risk: "low" as const },
+    { name: "Generic Supplier 3", country: material.topProducers[2] || "N/A", share: 25, risk: "low" as const },
   ];
 
   const avgRiskInfo = getRiskLevel(avgRisk);
@@ -188,7 +188,7 @@ export default function MaterialDetail() {
             </Badge>
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            CAS {material.casNumber} — {material.gramsPerCircuit.toFixed(4)} g per circuito ESU
+            CAS {material.casNumber} — {material.gramsPerCircuit.toFixed(4)} g per ECU circuit
           </p>
         </div>
       </div>
@@ -214,14 +214,14 @@ export default function MaterialDetail() {
         <Card className="border-border/50">
           <CardContent className="p-4 text-center">
             <Globe className="w-5 h-5 mx-auto mb-2" style={{ color: geoRiskInfo.color }} />
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Rischio Geopolitico</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Geopolitical Risk</p>
             <p className="text-xl font-bold mt-1" style={{ color: geoRiskInfo.color }}>{geoRisk}/100</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
           <CardContent className="p-4 text-center">
             <Shield className="w-5 h-5 mx-auto mb-2" style={{ color: avgRiskInfo.color }} />
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Rischio Medio</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Average Risk</p>
             <p className="text-xl font-bold mt-1" style={{ color: avgRiskInfo.color }}>{avgRisk}/100</p>
             <p className="text-[9px] mt-0.5" style={{ color: avgRiskInfo.color }}>{avgRiskInfo.label}</p>
           </CardContent>
@@ -234,7 +234,7 @@ export default function MaterialDetail() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Activity className="w-4 h-4 text-primary" />
-              Profilo di Rischio
+              Risk Profile
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -283,9 +283,9 @@ export default function MaterialDetail() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Factory className="w-4 h-4 text-primary" />
-              Fornitori
+              Suppliers
             </CardTitle>
-            <p className="text-xs text-muted-foreground">Distribuzione approvvigionamento e livello di rischio</p>
+            <p className="text-xs text-muted-foreground">Supply distribution and risk level by country</p>
           </CardHeader>
           <CardContent>
             {/* Supplier share bar chart */}
@@ -317,7 +317,7 @@ export default function MaterialDetail() {
                   <div className="text-right shrink-0">
                     <p className="text-xs font-bold">{s.share}%</p>
                     <p className="text-[9px] uppercase tracking-wider" style={{ color: riskColors[s.risk] }}>
-                      {s.risk === "high" ? "Alto" : s.risk === "medium" ? "Medio" : "Basso"}
+                      {s.risk === "high" ? "High" : s.risk === "medium" ? "Medium" : "Low"}
                     </p>
                   </div>
                 </div>
@@ -332,13 +332,13 @@ export default function MaterialDetail() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Globe className="w-4 h-4 text-primary" />
-            Concentrazione Geografica
+            Geographic Concentration
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-3">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Top Produttori</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Top Producers</p>
               {material.topProducers.map((p, i) => (
                 <div key={p} className="flex items-center gap-3">
                   <span className="text-xs font-mono text-muted-foreground w-4">{i + 1}.</span>
@@ -348,10 +348,10 @@ export default function MaterialDetail() {
               ))}
             </div>
             <div className="space-y-3">
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Indice HHI</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">HHI Index</p>
               <p className="text-3xl font-bold">{material.hhi.toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">
-                {material.hhi >= 2500 ? "Mercato altamente concentrato" : material.hhi >= 1500 ? "Concentrazione moderata" : "Mercato competitivo"}
+                {material.hhi >= 2500 ? "Highly concentrated market" : material.hhi >= 1500 ? "Moderate concentration" : "Competitive market"}
               </p>
               <Progress value={Math.min(material.hhi / 50, 100)} className="h-2" />
             </div>
@@ -359,7 +359,7 @@ export default function MaterialDetail() {
               <p className="text-xs text-muted-foreground uppercase tracking-wider">EU SR × EI</p>
               <p className="text-3xl font-bold">{material.euSRxEI}</p>
               <p className="text-xs text-muted-foreground">
-                {material.euSRxEI >= 3.5 ? "Zona critica EU" : material.euSRxEI >= 2.5 ? "Monitoraggio attivo" : "Sotto soglia"}
+                {material.euSRxEI >= 3.5 ? "EU critical zone" : material.euSRxEI >= 2.5 ? "Active monitoring" : "Below threshold"}
               </p>
             </div>
           </div>
@@ -367,10 +367,10 @@ export default function MaterialDetail() {
       </Card>
       {/* Download Report */}
       <DownloadReportSection
-        title={`Esporta Report ${material.name}`}
+        title={`Export Report ${material.name}`}
         actions={[
-          { label: "Report Dettagliato (.txt)", description: "Report completo con profilo di rischio", icon: "txt", onClick: () => downloadMaterialDetailReport(material) },
-          { label: "Dati (.csv)", description: "Esporta dati materiale", icon: "csv", onClick: () => downloadMaterialDetailCSV(material) },
+          { label: "Detailed Report (.txt)", description: "Full report with risk profile", icon: "txt", onClick: () => downloadMaterialDetailReport(material) },
+          { label: "Data (.csv)", description: "Export material data", icon: "csv", onClick: () => downloadMaterialDetailCSV(material) },
         ]}
       />
     </div>

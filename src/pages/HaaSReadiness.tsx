@@ -29,28 +29,28 @@ const gapData = haasMetrics.map((m) => ({
 
 const roadmapPhases = [
   {
-    phase: "Fase 1 — Foundation",
+    phase: "Phase 1 — Foundation",
     timeline: "Q1-Q2 2026",
     status: "in_progress",
-    items: ["Data Maturity ≥ 80%", "DPP copertura 100% ECU", "Integrazione ERP baseline"],
+    items: ["Data Maturity ≥ 80%", "DPP coverage 100% ECU", "ERP baseline integration"],
   },
   {
-    phase: "Fase 2 — Scale",
+    phase: "Phase 2 — Scale",
     timeline: "Q3-Q4 2026",
     status: "planned",
-    items: ["Reverse Flow Stability ≥ 70%", "Recovery Infrastructure ≥ 75%", "Contratti fornitori circolari"],
+    items: ["Reverse Flow Stability ≥ 70%", "Recovery Infrastructure ≥ 75%", "Circular supplier contracts"],
   },
   {
-    phase: "Fase 3 — Transition",
+    phase: "Phase 3 — Transition",
     timeline: "Q1-Q2 2027",
     status: "planned",
-    items: ["Financial Viability ≥ 65%", "Pilot HaaS con 2 OEM", "Compliance EU Battery Regulation"],
+    items: ["Financial Viability ≥ 65%", "HaaS pilot with 2 OEMs", "EU Battery Regulation compliance"],
   },
   {
-    phase: "Fase 4 — HaaS Launch",
+    phase: "Phase 4 — HaaS Launch",
     timeline: "H2 2027",
     status: "planned",
-    items: ["Tutte le dimensioni sopra soglia", "Modello HaaS operativo", "Scale-up produzione"],
+    items: ["All dimensions above threshold", "HaaS model operational", "Production scale-up"],
   },
 ];
 
@@ -60,7 +60,7 @@ export default function HaaSReadiness() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">HaaS Readiness</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Valutazione maturità per transizione a Hardware-as-a-Service
+          Maturity assessment for Hardware-as-a-Service transition
         </p>
       </div>
 
@@ -76,7 +76,7 @@ export default function HaaSReadiness() {
                 {overallScore}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                {readyDimensions}/{totalDimensions} dimensioni sopra soglia
+                {readyDimensions}/{totalDimensions} dimensions above threshold
               </p>
             </div>
             <div className="text-right">
@@ -100,7 +100,7 @@ export default function HaaSReadiness() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Target className="w-4 h-4 text-primary" />
-              Maturità per Dimensione
+              Maturity by Dimension
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -110,15 +110,16 @@ export default function HaaSReadiness() {
                 <PolarAngleAxis dataKey="dimension" tick={{ fill: "hsl(215,15%,55%)", fontSize: 9 }} />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                 <Radar name="Corrente" dataKey="current" stroke="hsl(190,85%,50%)" fill="hsl(190,85%,50%)" fillOpacity={0.15} strokeWidth={2} />
-                <Radar name="Soglia" dataKey="threshold" stroke="hsl(38,92%,55%)" fill="none" strokeWidth={1.5} strokeDasharray="4 4" />
+                <Radar name="Current" dataKey="current" stroke="hsl(190,85%,50%)" fill="hsl(190,85%,50%)" fillOpacity={0.15} strokeWidth={2} />
+                <Radar name="Threshold" dataKey="threshold" stroke="hsl(38,92%,55%)" fill="none" strokeWidth={1.5} strokeDasharray="4 4" />
               </RadarChart>
             </ResponsiveContainer>
             <div className="flex justify-center gap-6 mt-2">
               <span className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                <div className="w-3 h-0.5 bg-primary" /> Corrente
+                <div className="w-3 h-0.5 bg-primary" /> Current
               </span>
               <span className="text-[10px] text-muted-foreground flex items-center gap-1.5">
-                <div className="w-3 h-0.5 bg-accent border-dashed" style={{ borderTop: "1.5px dashed hsl(38,92%,55%)" }} /> Soglia
+                <div className="w-3 h-0.5 bg-accent border-dashed" style={{ borderTop: "1.5px dashed hsl(38,92%,55%)" }} /> Threshold
               </span>
             </div>
           </CardContent>

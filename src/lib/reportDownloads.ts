@@ -21,9 +21,9 @@ function timestamp() {
 export function downloadDashboardCSV() {
   const rows = [
     ["CRIS - Dashboard Executive Report"],
-    [`Data: ${timestamp()}`],
+    [`Date: ${timestamp()}`],
     [],
-    ["Materiale", "Yale Score", "EU SR×EI", "Cluster", "HHI", "Recovery Rate %", "Top Produttori"],
+    ["Material", "Yale Score", "EU SR×EI", "Cluster", "HHI", "Recovery Rate %", "Top Producers"],
     ...criticalMaterials.map((m) => [
       m.name,
       m.yaleScore,
@@ -34,8 +34,8 @@ export function downloadDashboardCSV() {
       `"${m.topProducers.join(", ")}"`,
     ]),
     [],
-    ["Distribuzione Cluster"],
-    ["Cluster", "Conteggio"],
+    ["Cluster Distribution"],
+    ["Cluster", "Count"],
     ...Object.entries(clusterInfo).map(([key, info]) => [
       info.label,
       criticalMaterials.filter((m) => m.cluster === key).length,
@@ -53,23 +53,23 @@ export function downloadDashboardReport() {
     "═══════════════════════════════════════════════════════════════",
     "  CRIS — CIRCULAR RISK INTELLIGENCE SYSTEM",
     "  Dashboard Executive Report",
-    `  Generato: ${new Date().toLocaleString("it-IT")}`,
+    `  Generated: ${new Date().toLocaleString("en-US")}`,
     "═══════════════════════════════════════════════════════════════",
     "",
-    "1. RIEPILOGO ESECUTIVO",
+    "1. EXECUTIVE SUMMARY",
     "───────────────────────────────────────────────────────────────",
-    `  Materiali monitorati:     ${criticalMaterials.length}`,
-    `  Alta esposizione (≥60):   ${highRisk.length}`,
-    `  Yale Score medio:         ${avgYale}/100`,
-    `  Recovery Rate medio:      ${avgRecovery}%`,
+    `  Tracked materials:     ${criticalMaterials.length}`,
+    `  High exposure (>=60):   ${highRisk.length}`,
+    `  Average Yale Score:         ${avgYale}/100`,
+    `  Average Recovery Rate:      ${avgRecovery}%`,
     "",
-    "2. MATERIALI AD ALTA ESPOSIZIONE",
+    "2. HIGH-EXPOSURE MATERIALS",
     "───────────────────────────────────────────────────────────────",
     ...highRisk.map((m) =>
       `  • ${m.name.padEnd(16)} Yale: ${m.yaleScore}  HHI: ${m.hhi.toString().padStart(5)}  Cluster: ${clusterInfo[m.cluster].label}`
     ),
     "",
-    "3. DISTRIBUZIONE CLUSTER",
+    "3. CLUSTER DISTRIBUTION",
     "───────────────────────────────────────────────────────────────",
     ...Object.entries(clusterInfo).map(([key, info]) => {
       const count = criticalMaterials.filter((m) => m.cluster === key).length;
@@ -77,9 +77,9 @@ export function downloadDashboardReport() {
       return `  ${info.label.padEnd(30)} [${bar}] ${count}`;
     }),
     "",
-    "4. DETTAGLIO MATERIALI",
+    "4. MATERIAL DETAILS",
     "───────────────────────────────────────────────────────────────",
-    "  Nome            Yale  EU SR×EI  HHI    Riciclo  Produttori",
+    "  Name            Yale  EU SR×EI  HHI    Recycling  Producers",
     "  ─────────────── ────  ────────  ─────  ───────  ──────────────────",
     ...criticalMaterials
       .sort((a, b) => b.yaleScore - a.yaleScore)
@@ -88,7 +88,7 @@ export function downloadDashboardReport() {
       ),
     "",
     "═══════════════════════════════════════════════════════════════",
-    "  Fine Report",
+    "  End of Report",
     "═══════════════════════════════════════════════════════════════",
   ];
   downloadFile(lines.join("\n"), `CRIS_Executive_Report_${timestamp()}.txt`, "text/plain");
@@ -97,13 +97,13 @@ export function downloadDashboardReport() {
 // ── Materials List Report ──
 export function downloadMaterialsCSV(materials: CriticalMaterial[]) {
   const rows = [
-    ["CRIS - Materiali CRM Report"],
-    [`Data: ${timestamp()}`],
+    ["CRIS - CRM Materials Report"],
+    [`Date: ${timestamp()}`],
     [],
     [
-      "Materiale", "CAS", "g/Circuit", "Yale Score", "EU SR×EI", "Cluster",
-      "HHI", "Recovery Rate %", "Supply Risk", "Geopolitica", "Prezzo Vol.",
-      "Riciclo Gap", "ESG Risk", "Concentr. HHI", "Top Produttori",
+      "Material", "CAS", "g/Circuit", "Yale Score", "EU SR×EI", "Cluster",
+      "HHI", "Recovery Rate %", "Supply Risk", "Geopolitical", "Price Vol.",
+      "Recycling Gap", "ESG Risk", "HHI Concentration", "Top Producers",
     ],
     ...materials.map((m) => [
       m.name,
@@ -131,38 +131,38 @@ export function downloadMaterialDetailReport(material: CriticalMaterial) {
   const lines = [
     "═══════════════════════════════════════════════════════════════",
     `  CRIS — Material Risk Report: ${material.name}`,
-    `  Generato: ${new Date().toLocaleString("it-IT")}`,
+    `  Generated: ${new Date().toLocaleString("en-US")}`,
     "═══════════════════════════════════════════════════════════════",
     "",
-    "1. IDENTIFICAZIONE",
+    "1. IDENTIFICATION",
     "───────────────────────────────────────────────────────────────",
-    `  Nome:              ${material.name}`,
+    `  Name:              ${material.name}`,
     `  CAS Number:        ${material.casNumber}`,
-    `  Peso/Circuito:     ${material.gramsPerCircuit.toFixed(4)} g`,
+    `  Weight/Circuit:     ${material.gramsPerCircuit.toFixed(4)} g`,
     `  Cluster:           ${cluster.label}`,
     "",
-    "2. INDICATORI DI RISCHIO",
+    "2. RISK INDICATORS",
     "───────────────────────────────────────────────────────────────",
-    `  Yale Score:        ${material.yaleScore}/100  ${material.yaleScore >= 60 ? "⚠ ALTA ESPOSIZIONE" : ""}`,
-    `  EU SR × EI:        ${material.euSRxEI}  ${material.euSRxEI >= 3.5 ? "⚠ ZONA CRITICA EU" : ""}`,
-    `  HHI:               ${material.hhi}  ${material.hhi >= 2500 ? "⚠ MERCATO CONCENTRATO" : ""}`,
+    `  Yale Score:        ${material.yaleScore}/100  ${material.yaleScore >= 60 ? "⚠ HIGH EXPOSURE" : ""}`,
+    `  EU SR × EI:        ${material.euSRxEI}  ${material.euSRxEI >= 3.5 ? "⚠ EU CRITICAL ZONE" : ""}`,
+    `  HHI:               ${material.hhi}  ${material.hhi >= 2500 ? "⚠ CONCENTRATED MARKET" : ""}`,
     `  Recovery Rate:     ${material.recycleRate}%`,
-    `  Rischio Medio:     ${avgRisk}/100`,
+    `  Average Risk:     ${avgRisk}/100`,
     "",
-    "3. PROFILO DI RISCHIO DETTAGLIATO",
+    "3. DETAILED RISK PROFILE",
     "───────────────────────────────────────────────────────────────",
     ...material.riskProfile.map((r) => {
       const bar = "█".repeat(Math.round(r.value / 5)) + "░".repeat(Math.max(0, 20 - Math.round(r.value / 5)));
       return `  ${r.subject.padEnd(18)} [${bar}] ${r.value}/100`;
     }),
     "",
-    "4. CONCENTRAZIONE GEOGRAFICA",
+    "4. GEOGRAPHIC CONCENTRATION",
     "───────────────────────────────────────────────────────────────",
-    `  Top Produttori:`,
+    `  Top Producers:`,
     ...material.topProducers.map((p, i) => `    ${i + 1}. ${p}`),
     "",
     "═══════════════════════════════════════════════════════════════",
-    "  Fine Report",
+    "  End of Report",
     "═══════════════════════════════════════════════════════════════",
   ];
   downloadFile(
@@ -175,10 +175,10 @@ export function downloadMaterialDetailReport(material: CriticalMaterial) {
 export function downloadMaterialDetailCSV(material: CriticalMaterial) {
   const rows = [
     [`CRIS - Report: ${material.name}`],
-    [`Data: ${timestamp()}`],
+    [`Date: ${timestamp()}`],
     [],
-    ["Campo", "Valore"],
-    ["Nome", material.name],
+    ["Field", "Value"],
+    ["Name", material.name],
     ["CAS Number", material.casNumber],
     ["g/Circuit", material.gramsPerCircuit],
     ["Yale Score", material.yaleScore],
@@ -186,9 +186,9 @@ export function downloadMaterialDetailCSV(material: CriticalMaterial) {
     ["Cluster", clusterInfo[material.cluster].label],
     ["HHI", material.hhi],
     ["Recovery Rate %", material.recycleRate],
-    ["Top Produttori", `"${material.topProducers.join(", ")}"`],
+    ["Top Producers", `"${material.topProducers.join(", ")}"`],
     [],
-    ["Dimensione Rischio", "Valore"],
+    ["Risk Dimension", "Value"],
     ...material.riskProfile.map((r) => [r.subject, r.value]),
   ];
   downloadFile(

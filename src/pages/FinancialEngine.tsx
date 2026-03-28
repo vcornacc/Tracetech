@@ -108,7 +108,7 @@ export default function FinancialEngine() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Motore Finanziario</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          NPV, IRR, Payback Period e stress test geopolitici per recovery circolare
+          NPV, IRR, Payback Period and geopolitical stress tests for circular recovery
         </p>
       </div>
 
@@ -117,18 +117,18 @@ export default function FinancialEngine() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Calculator className="w-4 h-4 text-primary" />
-            Parametri Scenario
+              Scenario Parameters
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
               { label: "CAPEX (€)", field: "capex" as const, min: 100000, max: 10000000, step: 100000 },
-              { label: "OPEX Annuo (€)", field: "opex" as const, min: 50000, max: 2000000, step: 50000 },
-              { label: "Capacità Annua", field: "annualCapacity" as const, min: 500, max: 50000, step: 500 },
-              { label: "Valore CRM/Unità (€)", field: "crmValuePerUnit" as const, min: 10, max: 1000, step: 5 },
-              { label: "Tasso Sconto (%)", field: "discountRate" as const, min: 0.01, max: 0.25, step: 0.01 },
-              { label: "Orizzonte (Anni)", field: "years" as const, min: 3, max: 20, step: 1 },
+              { label: "Annual OPEX (€)", field: "opex" as const, min: 50000, max: 2000000, step: 50000 },
+              { label: "Annual Capacity", field: "annualCapacity" as const, min: 500, max: 50000, step: 500 },
+              { label: "CRM Value/Unit (€)", field: "crmValuePerUnit" as const, min: 10, max: 1000, step: 5 },
+              { label: "Discount Rate (%)", field: "discountRate" as const, min: 0.01, max: 0.25, step: 0.01 },
+              { label: "Horizon (Years)", field: "years" as const, min: 3, max: 20, step: 1 },
             ].map((param) => (
               <div key={param.field} className="space-y-2">
                 <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">{param.label}</Label>
@@ -176,6 +176,7 @@ export default function FinancialEngine() {
             <Calculator className="w-5 h-5 mx-auto mb-2 text-primary" />
             <p className="text-[9px] text-muted-foreground uppercase">Payback Period</p>
             <p className="text-xl font-bold mt-1">{results.paybackYear > 0 ? `${results.paybackYear} anni` : "N/A"}</p>
+                      <p className="text-xl font-bold mt-1">{results.paybackYear > 0 ? `${results.paybackYear} yrs` : "N/A"}</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
@@ -193,7 +194,7 @@ export default function FinancialEngine() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" />
-              Cash Flow Cumulativo
+              Cumulative Cash Flow
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -214,7 +215,7 @@ export default function FinancialEngine() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />
-              Revenue vs OPEX Annuale
+              Revenue vs Annual OPEX
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -237,7 +238,7 @@ export default function FinancialEngine() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <TrendingUp className="w-4 h-4 text-primary" />
-            Analisi di Sensitività — Variazione Valore CRM
+              Sensitivity Analysis — CRM Value Variation
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -260,7 +261,7 @@ export default function FinancialEngine() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-accent" />
-            Stress Test Geopolitici
+              Geopolitical Stress Tests
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -271,7 +272,7 @@ export default function FinancialEngine() {
                   <th className="text-left p-3 text-[10px] uppercase tracking-wider text-muted-foreground">Scenario</th>
                   <th className="text-right p-3 text-[10px] uppercase tracking-wider text-muted-foreground">NPV (€)</th>
                   <th className="text-right p-3 text-[10px] uppercase tracking-wider text-muted-foreground">IRR (%)</th>
-                  <th className="text-right p-3 text-[10px] uppercase tracking-wider text-muted-foreground">Payback (anni)</th>
+                  <th className="text-right p-3 text-[10px] uppercase tracking-wider text-muted-foreground">Payback (yrs)</th>
                 </tr>
               </thead>
               <tbody>

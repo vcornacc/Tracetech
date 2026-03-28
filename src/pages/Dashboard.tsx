@@ -32,6 +32,7 @@ import {
 import { criticalMaterials as fallbackMaterials, clusterInfo } from "@/data/materialsData";
 import { useData } from "@/hooks/useData";
 import { downloadDashboardCSV, downloadDashboardReport } from "@/lib/reportDownloads";
+import { DataPageSkeleton } from "@/components/DataPageSkeleton";
 
 const clusterColors: Record<string, string> = Object.fromEntries(
   Object.entries(clusterInfo).map(([k, v]) => [k, v.color])
@@ -52,7 +53,11 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function Dashboard() {
-  const { materials: criticalMaterials, dataSource } = useData();
+  const { materials: criticalMaterials, materialsLoading } = useData();
+
+  if (materialsLoading) {
+    return <DataPageSkeleton cards={4} rows={8} />;
+  }
 
   const matrixData = criticalMaterials.map((m) => ({
     name: m.name,
@@ -82,22 +87,22 @@ export default function Dashboard() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Dashboard Executive</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Panoramica rischio materie prime critiche — aggiornamento in tempo reale
+          Critical raw materials risk overview — real-time monitoring
         </p>
       </div>
 
       {/* KPI Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
-          title="Materiali Monitorati"
+          title="Tracked Materials"
           value={criticalMaterials.length}
-          subtitle="da Bosch Circuit BOM"
+          subtitle="from BOM analysis"
           icon={<Database className="w-5 h-5" />}
           variant="cyan"
           href="/materials"
         />
         <MetricCard
-          title="Alta Esposizione"
+          title="High Exposure"
           value={criticalMaterials.filter((m) => m.yaleScore >= 60 && (m.cluster === "systemic" || m.cluster === "product")).length}
           subtitle="Yale ≥ 60 + EU Critical"
           icon={<AlertTriangle className="w-5 h-5" />}
@@ -107,15 +112,15 @@ export default function Dashboard() {
         <MetricCard
           title="Recovery Rate"
           value="23%"
-          subtitle="media circolare"
+          subtitle="circular average"
           icon={<Recycle className="w-5 h-5" />}
           variant="success"
           trend={{ value: 5, label: "vs Q3" }}
         />
         <MetricCard
-          title="Rischio Geopolitico"
+          title="Geopolitical Risk"
           value="72/100"
-          subtitle="indice concentrazione"
+          subtitle="concentration index"
           icon={<Globe className="w-5 h-5" />}
           variant="amber"
         />
@@ -128,7 +133,7 @@ export default function Dashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />
-              Matrice di Criticità 2D
+              2D Criticality Matrix
             </CardTitle>
             <p className="text-xs text-muted-foreground">Yale Score vs EU Supply Risk × Economic Importance</p>
           </CardHeader>
@@ -182,7 +187,7 @@ export default function Dashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Activity className="w-4 h-4 text-primary" />
-              Profilo di Rischio
+              Risk Profile
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -192,7 +197,7 @@ export default function Dashboard() {
                 <PolarAngleAxis dataKey="subject" tick={{ fill: "hsl(215, 15%, 55%)", fontSize: 10 }} />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                 <Radar
-                  name="Rischio"
+                  name="Risk"
                   dataKey="A"
                   stroke="hsl(190, 85%, 50%)"
                   fill="hsl(190, 85%, 50%)"
@@ -212,7 +217,7 @@ export default function Dashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Shield className="w-4 h-4 text-primary" />
-              Distribuzione Cluster
+              Cluster Distribution
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -241,16 +246,16 @@ export default function Dashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-accent" />
-              Alert Recenti
+              Recent Alerts
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               {[
-                { level: "critical", msg: "Cobalto: Yale Score superato soglia 80 — cluster Systemic Dual", time: "2h fa" },
-                { level: "warning", msg: "Litio: HHI in aumento (+12%) — concentrazione Australia/Cile", time: "5h fa" },
-                { level: "info", msg: "Terre Rare: nuovo fornitore qualificato riduce HHI del 4%", time: "1g fa" },
-                { level: "warning", msg: "Platino: volatilità prezzo +18% nell'ultimo trimestre", time: "2g fa" },
+                { level: "critical", msg: "Cobalt: Yale Score exceeded threshold 80 — Systemic Dual cluster", time: "2h ago" },
+                { level: "warning", msg: "Lithium: HHI rising (+12%) — concentration in Australia/Chile", time: "5h ago" },
+                { level: "info", msg: "Rare Earths: new qualified supplier reduces HHI by 4%", time: "1d ago" },
+                { level: "warning", msg: "Platinum: price volatility +18% in last quarter", time: "2d ago" },
               ].map((alert, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30">
                   <div
@@ -274,10 +279,10 @@ export default function Dashboard() {
       </div>
       {/* Download Report */}
       <DownloadReportSection
-        title="Esporta Report Executive"
+        title="Export Executive Report"
         actions={[
-          { label: "Report Completo (.txt)", description: "Report executive testuale", icon: "txt", onClick: downloadDashboardReport },
-          { label: "Dati Materiali (.csv)", description: "Esporta dati in CSV", icon: "csv", onClick: downloadDashboardCSV },
+          { label: "Full Report (.txt)", description: "Executive text report", icon: "txt", onClick: downloadDashboardReport },
+          { label: "Materials Data (.csv)", description: "Export data to CSV", icon: "csv", onClick: downloadDashboardCSV },
         ]}
       />
     </div>

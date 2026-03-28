@@ -45,7 +45,7 @@ export function DownloadReportSection({
         </div>
         <p className="text-[10px] text-muted-foreground mt-2">
           {actions.length > 1
-            ? "Seleziona il formato di esportazione desiderato"
+            ? "Select the desired export format"
             : actions[0]?.description}
         </p>
       </CardContent>

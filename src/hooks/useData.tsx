@@ -64,11 +64,11 @@ function transformMaterial(m: Material): CriticalMaterial {
     topProducers: m.top_producers,
     riskProfile: [
       { subject: "Supply Risk", value: m.risk_supply },
-      { subject: "Geopolitica", value: m.risk_geopolitical },
-      { subject: "Prezzo Vol.", value: m.risk_price_volatility },
-      { subject: "Riciclo Gap", value: m.risk_recycle_gap },
+      { subject: "Geopolitical", value: m.risk_geopolitical },
+      { subject: "Price Vol.", value: m.risk_price_volatility },
+      { subject: "Recycling Gap", value: m.risk_recycle_gap },
       { subject: "ESG Risk", value: m.risk_esg },
-      { subject: "Concentr. HHI", value: m.risk_concentration_hhi },
+      { subject: "HHI Concentration", value: m.risk_concentration_hhi },
     ],
   };
 }

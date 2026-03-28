@@ -11,6 +11,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { MetricCard } from "@/components/MetricCard";
+import { DataPageSkeleton } from "@/components/DataPageSkeleton";
 import {
   Cpu, Search, MapPin, Activity, Recycle, Shield, AlertTriangle, ChevronRight, Package,
 } from "lucide-react";
@@ -18,10 +19,10 @@ import { type ECU } from "@/data/ecuData";
 import { useData } from "@/hooks/useData";
 
 const statusConfig: Record<ECU["status"], { label: string; class: string }> = {
-  active: { label: "Attivo", class: "bg-success/15 text-success border-success/30" },
-  maintenance: { label: "Manutenzione", class: "bg-accent/15 text-accent border-accent/30" },
-  eol: { label: "Fine Vita", class: "bg-destructive/15 text-destructive border-destructive/30" },
-  recovered: { label: "Recuperato", class: "bg-primary/15 text-primary border-primary/30" },
+  active: { label: "Active", class: "bg-success/15 text-success border-success/30" },
+  maintenance: { label: "Maintenance", class: "bg-accent/15 text-accent border-accent/30" },
+  eol: { label: "End of Life", class: "bg-destructive/15 text-destructive border-destructive/30" },
+  recovered: { label: "Recovered", class: "bg-primary/15 text-primary border-primary/30" },
   in_recovery: { label: "In Recovery", class: "bg-chart-violet/15 text-chart-violet border-chart-violet/30" },
 };
 
@@ -35,10 +36,14 @@ const pathConfig: Record<ECU["circularPath"], { label: string; class: string }> 
 
 export default function ECUInventory() {
   const navigate = useNavigate();
-  const { ecuInventory } = useData();
+  const { ecuInventory, ecusLoading } = useData();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [pathFilter, setPathFilter] = useState("all");
+
+  if (ecusLoading) {
+    return <DataPageSkeleton cards={4} rows={10} />;
+  }
 
   const filtered = ecuInventory.filter((ecu) => {
     const matchSearch =
@@ -58,39 +63,39 @@ export default function ECUInventory() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Inventario ECU</h1>
+        <h1 className="text-2xl font-bold tracking-tight">ECU Inventory</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Digital Product Passport — {ecuInventory.length} unità tracciate nel sistema
+          Digital Product Passport — {ecuInventory.length} units tracked in the system
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard title="ECU Attive" value={activeCount} subtitle="in servizio" icon={<Cpu className="w-5 h-5" />} variant="cyan" />
-        <MetricCard title="Fine Vita / Recovery" value={eolCount} subtitle="in pipeline circolare" icon={<Recycle className="w-5 h-5" />} variant="amber" />
-        <MetricCard title="ECU Recuperate" value={recoveredCount} subtitle="CRM reintegrati" icon={<Package className="w-5 h-5" />} variant="success" />
-        <MetricCard title="Valore CRM Totale" value={`€${Math.round(totalCrmValue).toLocaleString()}`} subtitle="materiali recuperabili" icon={<Shield className="w-5 h-5" />} variant="critical" />
+        <MetricCard title="Active ECUs" value={activeCount} subtitle="in service" icon={<Cpu className="w-5 h-5" />} variant="cyan" />
+        <MetricCard title="End-of-Life / Recovery" value={eolCount} subtitle="in circular pipeline" icon={<Recycle className="w-5 h-5" />} variant="amber" />
+        <MetricCard title="Recovered ECUs" value={recoveredCount} subtitle="CRM recovered" icon={<Package className="w-5 h-5" />} variant="success" />
+        <MetricCard title="Total CRM Value" value={`€${Math.round(totalCrmValue).toLocaleString()}`} subtitle="recoverable materials" icon={<Shield className="w-5 h-5" />} variant="critical" />
       </div>
 
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px] max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Cerca ECU, modello, veicolo..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 bg-secondary/30 border-border/50" />
+          <Input placeholder="Search ECU, model, vehicle..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-9 bg-secondary/30 border-border/50" />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[160px] h-9 bg-secondary/30 border-border/50"><SelectValue placeholder="Stato" /></SelectTrigger>
+          <SelectTrigger className="w-[160px] h-9 bg-secondary/30 border-border/50"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti gli stati</SelectItem>
-            <SelectItem value="active">Attivo</SelectItem>
-            <SelectItem value="maintenance">Manutenzione</SelectItem>
-            <SelectItem value="eol">Fine Vita</SelectItem>
+            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="maintenance">Maintenance</SelectItem>
+            <SelectItem value="eol">End of Life</SelectItem>
             <SelectItem value="in_recovery">In Recovery</SelectItem>
-            <SelectItem value="recovered">Recuperato</SelectItem>
+            <SelectItem value="recovered">Recovered</SelectItem>
           </SelectContent>
         </Select>
         <Select value={pathFilter} onValueChange={setPathFilter}>
-          <SelectTrigger className="w-[180px] h-9 bg-secondary/30 border-border/50"><SelectValue placeholder="Percorso" /></SelectTrigger>
+          <SelectTrigger className="w-[180px] h-9 bg-secondary/30 border-border/50"><SelectValue placeholder="Path" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i percorsi</SelectItem>
+            <SelectItem value="all">All paths</SelectItem>
             <SelectItem value="repair">Repair</SelectItem>
             <SelectItem value="reuse">Reuse</SelectItem>
             <SelectItem value="refurbish">Refurbish</SelectItem>
@@ -105,18 +110,25 @@ export default function ECUInventory() {
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent border-border/50">
-                <TableHead className="text-[10px] uppercase tracking-wider">ID / Modello</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-wider">Veicolo</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-wider">Stato</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-wider">Percorso</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider">ID / Model</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider">Vehicle</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider">Status</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider">Path</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider">Health</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider">CRM (g)</TableHead>
-                <TableHead className="text-[10px] uppercase tracking-wider">Valore €</TableHead>
+                <TableHead className="text-[10px] uppercase tracking-wider">Value €</TableHead>
                 <TableHead className="text-[10px] uppercase tracking-wider">Risk</TableHead>
                 <TableHead className="w-8"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
+              {filtered.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={10} className="py-10 text-center text-sm text-muted-foreground">
+                    No ECUs found for current filters.
+                  </TableCell>
+                </TableRow>
+              )}
               {filtered.map((ecu) => {
                 const sc = statusConfig[ecu.status];
                 const pc = pathConfig[ecu.circularPath];

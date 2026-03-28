@@ -80,20 +80,20 @@ export interface MaterialImpact {
 export const SCENARIO_TEMPLATES: { id: string; name: string; description: string; params: ScenarioParameter }[] = [
   {
     id: "palladium-spike",
-    name: "Picco Prezzo Palladio +25%",
-    description: "Aumento del 25% del prezzo del Palladio dovuto a tensioni in Russia",
+    name: "Palladium Price Spike +25%",
+    description: "25% increase in Palladium price due to geopolitical tensions in Russia",
     params: { type: "price_change", materialName: "Palladium", priceChangePct: 25 },
   },
   {
     id: "drc-crisis",
-    name: "Crisi DRC — Blocco Cobalto",
-    description: "Instabilità politica in Congo (DRC) blocca il 40% della supply mondiale di Cobalto",
+    name: "DRC Crisis — Cobalt Supply Block",
+    description: "Political instability in Congo (DRC) blocks 40% of global Cobalt supply",
     params: { type: "geopolitical_crisis", country: "Congo (DRC)", supplyReductionPct: 40, durationMonths: 6 },
   },
   {
     id: "china-germanium-ban",
-    name: "Blocco Export Cina — Germanio",
-    description: "La Cina blocca l'export di Germanio, Indio e Tungsteno (- 30% supply globale)",
+    name: "China Export Ban — Germanium",
+    description: "China blocks export of Germanium, Indium and Tungsten (−30% global supply)",
     params: {
       type: "geopolitical_crisis",
       country: "China",
@@ -105,7 +105,7 @@ export const SCENARIO_TEMPLATES: { id: string; name: string; description: string
   {
     id: "eu-battery-reg",
     name: "EU Battery Regulation 2027",
-    description: "Nuovi requisiti di contenuto riciclato minimo: Cobalto 16%, Nickel 6%, Manganese 6%",
+    description: "New minimum recycled content requirements: Cobalt 16%, Nickel 6%, Manganese 6%",
     params: {
       type: "regulatory_change",
       minRecycledContentPct: 16,
@@ -114,14 +114,14 @@ export const SCENARIO_TEMPLATES: { id: string; name: string; description: string
   },
   {
     id: "ev-demand-surge",
-    name: "Boom Domanda EV +40%",
-    description: "Aumento improvviso della domanda di veicoli elettrici del 40%, pressione su tutti i materiali per batterie",
+    name: "EV Demand Surge +40%",
+    description: "Sudden 40% increase in electric vehicle demand, pressure on all battery materials",
     params: { type: "demand_surge", demandIncreasePct: 40 },
   },
   {
     id: "copper-price-drop",
-    name: "Crollo Prezzo Rame -15%",
-    description: "Rallentamento economico globale causa un calo del 15% nel prezzo del rame",
+    name: "Copper Price Drop -15%",
+    description: "Global economic slowdown causes a 15% drop in copper price",
     params: { type: "price_change", materialName: "Copper", priceChangePct: -15 },
   },
 ];
@@ -150,7 +150,7 @@ export function runSimulation(
 
   switch (params.type) {
     case "price_change": {
-      scenarioName = `Variazione prezzo ${params.materialName} ${params.priceChangePct! > 0 ? "+" : ""}${params.priceChangePct}%`;
+      scenarioName = `Price change ${params.materialName} ${params.priceChangePct! > 0 ? "+" : ""}${params.priceChangePct}%`;
       const mat = materialMap.get(params.materialName!);
       if (mat) {
         const impact = calculatePriceImpact(
@@ -163,18 +163,18 @@ export function runSimulation(
         totalCostImpact += impact.costImpactEuro;
 
         if (params.priceChangePct! > 20) {
-          recommendations.push(`Attivare protocollo hedging per ${params.materialName}`);
-          recommendations.push(`Valutare fornitori alternativi o sostituzione materiale`);
+          recommendations.push(`Activate hedging protocol for ${params.materialName}`);
+          recommendations.push(`Evaluate alternative suppliers or material substitution`);
         }
         if (params.priceChangePct! > 0) {
-          recommendations.push(`Accelerare programmi di recovery e riciclo per ${params.materialName}`);
+          recommendations.push(`Accelerate recovery and recycling programs for ${params.materialName}`);
         }
       }
       break;
     }
     case "geopolitical_crisis":
     case "supply_disruption": {
-      scenarioName = `Crisi geopolitica: ${params.country} (supply -${params.supplyReductionPct}%)`;
+      scenarioName = `Geopolitical crisis: ${params.country} (supply -${params.supplyReductionPct}%)`;
       const affectedMats = params.affectedMaterials
         ? materials.filter((m) => params.affectedMaterials!.includes(m.name))
         : materials.filter((m) =>
@@ -197,16 +197,16 @@ export function runSimulation(
         totalCostImpact += impact.costImpactEuro;
       }
 
-      recommendations.push(`Attivare scorte strategiche per materiali provenienti da ${params.country}`);
-      recommendations.push(`Diversificare la base fornitori al di fuori di ${params.country}`);
+      recommendations.push(`Activate strategic stock for materials sourced from ${params.country}`);
+      recommendations.push(`Diversify supplier base outside ${params.country}`);
       if (params.durationMonths && params.durationMonths > 3) {
-        recommendations.push(`Valutare sostituzione a medio termine dei materiali più critici`);
+        recommendations.push(`Evaluate medium-term substitution of the most critical materials`);
       }
-      recommendations.push(`Monitorare bollettini geopolitici per aggiornamenti sulla situazione`);
+      recommendations.push(`Monitor geopolitical bulletins for situation updates`);
       break;
     }
     case "regulatory_change": {
-      scenarioName = `Cambio normativo: contenuto riciclato minimo ${params.minRecycledContentPct}%`;
+      scenarioName = `Regulatory change: minimum recycled content ${params.minRecycledContentPct}%`;
       const affectedMats = params.affectedMaterials
         ? materials.filter((m) => params.affectedMaterials!.includes(m.name))
         : materials.filter((m) => m.recycle_rate < (params.minRecycledContentPct ?? 16));
@@ -226,13 +226,13 @@ export function runSimulation(
         totalCostImpact += impact.costImpactEuro;
       }
 
-      recommendations.push(`Investire in infrastruttura di riciclo per raggiungere soglia ${params.minRecycledContentPct}%`);
-      recommendations.push(`Stipulare contratti con impianti di riciclo certificati`);
-      recommendations.push(`Avviare programmi di take-back per componenti a fine vita`);
+      recommendations.push(`Invest in recycling infrastructure to reach threshold ${params.minRecycledContentPct}%`);
+      recommendations.push(`Sign agreements with certified recycling facilities`);
+      recommendations.push(`Start take-back programs for end-of-life components`);
       break;
     }
     case "demand_surge": {
-      scenarioName = `Aumento domanda +${params.demandIncreasePct}%`;
+      scenarioName = `Increase in demand +${params.demandIncreasePct}%`;
       // Battery-critical materials affected disproportionately
       const batteryMats = ["Cobalt", "Nickel", "Manganese", "Indium", "Germanium"];
       for (const mat of materials) {
@@ -252,8 +252,8 @@ export function runSimulation(
         }
       }
 
-      recommendations.push(`Assicurare contratti a lungo termine per materiali chiave`);
-      recommendations.push(`Accelerare processi di recovery per ridurre dipendenza da approvvigionamento primario`);
+      recommendations.push(`Secure long-term contracts for key materials`);
+      recommendations.push(`Accelerate recovery processes to reduce dependence on primary sourcing`);
       break;
     }
   }

@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { clusterInfo } from "@/data/materialsData";
 import { useData } from "@/hooks/useData";
+import { DataPageSkeleton } from "@/components/DataPageSkeleton";
 
 // Geographic dependency data
 const geoDependency = [
@@ -31,14 +32,18 @@ const riskColors: Record<string, string> = {
 
 // Recovery KPIs
 const recoveryKPIs = [
-  { label: "Cobalto Recuperato", value: 4.2, unit: "kg/mese", target: 8, color: "hsl(0,72%,55%)" },
-  { label: "Palladio Recuperato", value: 0.8, unit: "kg/mese", target: 1.5, color: "hsl(38,92%,55%)" },
-  { label: "Tantalio Recuperato", value: 1.1, unit: "kg/mese", target: 2.0, color: "hsl(190,85%,50%)" },
-  { label: "Indio Recuperato", value: 0.3, unit: "kg/mese", target: 0.6, color: "hsl(270,60%,60%)" },
+  { label: "Cobalt Recovered", value: 4.2, unit: "kg/mo", target: 8, color: "hsl(0,72%,55%)" },
+  { label: "Palladium Recovered", value: 0.8, unit: "kg/mo", target: 1.5, color: "hsl(38,92%,55%)" },
+  { label: "Tantalum Recovered", value: 1.1, unit: "kg/mo", target: 2.0, color: "hsl(190,85%,50%)" },
+  { label: "Indium Recovered", value: 0.3, unit: "kg/mo", target: 0.6, color: "hsl(270,60%,60%)" },
 ];
 
 export default function ExecutiveDashboard() {
-  const { materials: criticalMaterials, ecuInventory, circularTriggers } = useData();
+  const { materials: criticalMaterials, ecuInventory, circularTriggers, materialsLoading, ecusLoading, triggersLoading } = useData();
+
+  if (materialsLoading || ecusLoading || triggersLoading) {
+    return <DataPageSkeleton cards={6} rows={8} />;
+  }
 
   const clusterBarData = Object.entries(clusterInfo).map(([key, info]) => ({
     name: info.label.split(" ").slice(0, 2).join(" "),
@@ -59,18 +64,18 @@ export default function ExecutiveDashboard() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Executive Dashboard</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Governance circolare — panoramica strategica TraceTech
+          Circular governance — TraceTech strategic overview
         </p>
       </div>
 
       {/* Top KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <MetricCard title="Materiali CRM" value={criticalMaterials.length} subtitle="monitorati" icon={<Activity className="w-5 h-5" />} variant="cyan" />
-        <MetricCard title="Alta Esposizione" value={highExposure} subtitle="Yale ≥ 60 + EU Critical" icon={<AlertTriangle className="w-5 h-5" />} variant="critical" />
-        <MetricCard title="ECU Tracciate" value={totalECU} subtitle="nel sistema DPP" icon={<Cpu className="w-5 h-5" />} variant="amber" />
-        <MetricCard title="Recovery Rate" value="23%" subtitle="media circolare" icon={<Recycle className="w-5 h-5" />} variant="success" />
-        <MetricCard title="Risk Score Medio" value={`${avgRiskScore}/100`} subtitle="portafoglio ECU" icon={<Shield className="w-5 h-5" />} variant="critical" />
-        <MetricCard title="Valore CRM" value={`€${totalCrmValue.toLocaleString()}`} subtitle="recuperabile" icon={<DollarSign className="w-5 h-5" />} variant="cyan" />
+        <MetricCard title="CRM Materials" value={criticalMaterials.length} subtitle="monitored" icon={<Activity className="w-5 h-5" />} variant="cyan" />
+        <MetricCard title="High Exposure" value={highExposure} subtitle="Yale ≥ 60 + EU Critical" icon={<AlertTriangle className="w-5 h-5" />} variant="critical" />
+        <MetricCard title="Tracked ECUs" value={totalECU} subtitle="in DPP system" icon={<Cpu className="w-5 h-5" />} variant="amber" />
+        <MetricCard title="Recovery Rate" value="23%" subtitle="circular average" icon={<Recycle className="w-5 h-5" />} variant="success" />
+        <MetricCard title="Avg Risk Score" value={`${avgRiskScore}/100`} subtitle="ECU portfolio" icon={<Shield className="w-5 h-5" />} variant="critical" />
+        <MetricCard title="CRM Value" value={`€${totalCrmValue.toLocaleString()}`} subtitle="recoverable" icon={<DollarSign className="w-5 h-5" />} variant="cyan" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -79,9 +84,9 @@ export default function ExecutiveDashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Globe className="w-4 h-4 text-primary" />
-              Mappa Globale Esposizione CRM
+              Global CRM Exposure Map
             </CardTitle>
-            <p className="text-xs text-muted-foreground">Dipendenza geografica per paese fornitore</p>
+            <p className="text-xs text-muted-foreground">Geographic dependency by supply country</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
@@ -103,7 +108,7 @@ export default function ExecutiveDashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />
-              Distribuzione Cluster & Recovery KPI
+              Cluster Distribution & Recovery KPIs
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -137,9 +142,9 @@ export default function ExecutiveDashboard() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-accent" />
-            Sistema Alert Automatico
+              Automatic Alert System
             <Badge variant="outline" className="text-[9px] bg-destructive/15 text-destructive border-destructive/30 ml-2">
-              {activeAlerts.length} attivi
+              {activeAlerts.length} active
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -158,7 +163,7 @@ export default function ExecutiveDashboard() {
                   <p className="text-[10px] text-muted-foreground">{alert.description}</p>
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-[9px] text-muted-foreground">ECU: {alert.affectedECUs}</span>
-                    <span className="text-[9px] text-muted-foreground font-mono">{new Date(alert.timestamp).toLocaleDateString("it-IT")}</span>
+                    <span className="text-[9px] text-muted-foreground font-mono">{new Date(alert.timestamp).toLocaleDateString("en-US")}</span>
                   </div>
                 </div>
               </div>

@@ -159,7 +159,7 @@ export function getMaterialRiskProfile(material: Material): MaterialRiskProfile[
   return [
     { subject: "Supply Risk", value: material.risk_supply },
     { subject: "Geopolitica", value: material.risk_geopolitical },
-    { subject: "Prezzo Vol.", value: material.risk_price_volatility },
+    { subject: "Price Vol.", value: material.risk_price_volatility },
     { subject: "Riciclo Gap", value: material.risk_recycle_gap },
     { subject: "ESG Risk", value: material.risk_esg },
     { subject: "Concentr. HHI", value: material.risk_concentration_hhi },

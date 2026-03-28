@@ -19,6 +19,7 @@ import FinancialEngine from "./pages/FinancialEngine";
 import ExecutiveDashboard from "./pages/ExecutiveDashboard";
 import HaaSReadiness from "./pages/HaaSReadiness";
 import NotFound from "./pages/NotFound";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 const DEV_BYPASS_AUTH = import.meta.env.DEV && import.meta.env.VITE_BYPASS_AUTH === "true";
@@ -66,6 +67,7 @@ const App = () => (
             <Route path="/financial" element={<ProtectedRoute><FinancialEngine /></ProtectedRoute>} />
             <Route path="/executive" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
             <Route path="/haas" element={<ProtectedRoute><HaaSReadiness /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </DataProvider>

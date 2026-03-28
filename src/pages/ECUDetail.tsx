@@ -15,12 +15,12 @@ import { clusterInfo } from "@/data/materialsData";
 import { useData } from "@/hooks/useData";
 
 const statusLabels: Record<string, string> = {
-  active: "Attivo", maintenance: "Manutenzione", eol: "Fine Vita",
-  recovered: "Recuperato", in_recovery: "In Recovery",
+  active: "Active", maintenance: "Maintenance", eol: "End of Life",
+  recovered: "Recovered", in_recovery: "In Recovery",
 };
 const pathLabels: Record<string, string> = {
   repair: "Repair", reuse: "Reuse", refurbish: "Refurbish",
-  selective_recovery: "Selective CRM Recovery", pending: "In Attesa",
+  selective_recovery: "Selective CRM Recovery", pending: "Pending",
 };
 const eventIcons: Record<string, typeof Cpu> = {
   production: Factory, installation: Wrench, maintenance: Wrench,
@@ -37,9 +37,9 @@ export default function ECUDetail() {
     return (
       <div className="space-y-6">
         <Button variant="ghost" size="sm" onClick={() => navigate("/ecu")}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Torna all'inventario
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back to inventory
         </Button>
-        <p className="text-muted-foreground">ECU non trovata.</p>
+        <p className="text-muted-foreground">ECU not found.</p>
       </div>
     );
   }
@@ -102,14 +102,14 @@ export default function ECUDetail() {
               { label: "Digital Twin", value: ecu.digitalTwinId, mono: true },
               { label: "Part Number", value: ecu.partNumber, mono: true },
               { label: "VIN", value: ecu.vin, mono: true },
-              { label: "Veicolo", value: ecu.vehicleModel },
-              { label: "Produzione", value: ecu.productionDate },
-              { label: "Ubicazione", value: ecu.location },
-              { label: "Km Percorsi", value: `${ecu.mileageKm.toLocaleString()} km` },
-              { label: "Peso Totale", value: `${ecu.totalWeightGrams.toFixed(0)} g` },
+              { label: "Vehicle", value: ecu.vehicleModel },
+              { label: "Production", value: ecu.productionDate },
+              { label: "Location", value: ecu.location },
+              { label: "Mileage", value: `${ecu.mileageKm.toLocaleString()} km` },
+              { label: "Total Weight", value: `${ecu.totalWeightGrams.toFixed(0)} g` },
               { label: "CRM Content", value: `${ecu.crmContentGrams.toFixed(1)} g` },
-              { label: "Valore CRM", value: `€${ecu.crmValueEuro.toFixed(0)}` },
-              { label: "Percorso Circolare", value: pathLabels[ecu.circularPath] },
+              { label: "CRM Value", value: `€${ecu.crmValueEuro.toFixed(0)}` },
+              { label: "Circular Path", value: pathLabels[ecu.circularPath] },
             ].map((item) => (
               <div key={item.label} className="space-y-1">
                 <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{item.label}</p>
@@ -133,8 +133,8 @@ export default function ECUDetail() {
         <Card className="border-border/50">
           <CardContent className="p-4 text-center">
             <Clock className="w-5 h-5 mx-auto mb-2 text-accent" />
-            <p className="text-[9px] text-muted-foreground uppercase">Vita Residua</p>
-            <p className="text-xl font-bold mt-1">{ecu.remainingLifeMonths} mesi</p>
+            <p className="text-[9px] text-muted-foreground uppercase">Remaining Life</p>
+            <p className="text-xl font-bold mt-1">{ecu.remainingLifeMonths} months</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
@@ -159,7 +159,7 @@ export default function ECUDetail() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Activity className="w-4 h-4 text-primary" />
-              Profilo di Rischio Aggregato ECU
+              ECU Aggregated Risk Profile
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -172,7 +172,7 @@ export default function ECUDetail() {
                   <Radar dataKey="value" stroke="hsl(190,85%,50%)" fill="hsl(190,85%,50%)" fillOpacity={0.15} strokeWidth={2} />
                 </RadarChart>
               </ResponsiveContainer>
-            ) : <p className="text-sm text-muted-foreground p-8 text-center">Dati non disponibili</p>}
+            ) : <p className="text-sm text-muted-foreground p-8 text-center">Data not available</p>}
           </CardContent>
         </Card>
 
@@ -181,7 +181,7 @@ export default function ECUDetail() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Box className="w-4 h-4 text-primary" />
-              Composizione Materiale
+              Material Composition
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -202,7 +202,7 @@ export default function ECUDetail() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Cpu className="w-4 h-4 text-primary" />
-            Bill of Materials CRM — {ecu.materials.length} materiali
+            Bill of Materials CRM — {ecu.materials.length} materials
           </CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -210,11 +210,11 @@ export default function ECUDetail() {
             <table className="w-full text-xs">
               <thead>
                 <tr className="border-b border-border/50">
-                  <th className="text-left p-3 text-[10px] uppercase tracking-wider text-muted-foreground">Materiale</th>
-                  <th className="text-right p-3 text-[10px] uppercase tracking-wider text-muted-foreground">Peso (g)</th>
+                  <th className="text-left p-3 text-[10px] uppercase tracking-wider text-muted-foreground">Material</th>
+                  <th className="text-right p-3 text-[10px] uppercase tracking-wider text-muted-foreground">Weight (g)</th>
                   <th className="text-right p-3 text-[10px] uppercase tracking-wider text-muted-foreground">€/kg</th>
-                  <th className="text-center p-3 text-[10px] uppercase tracking-wider text-muted-foreground">Recuperabile</th>
-                  <th className="text-left p-3 text-[10px] uppercase tracking-wider text-muted-foreground">Metodo Recovery</th>
+                  <th className="text-center p-3 text-[10px] uppercase tracking-wider text-muted-foreground">Recoverable</th>
+                  <th className="text-left p-3 text-[10px] uppercase tracking-wider text-muted-foreground">Recovery Method</th>
                 </tr>
               </thead>
               <tbody>
@@ -240,7 +240,7 @@ export default function ECUDetail() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Clock className="w-4 h-4 text-primary" />
-            Timeline Ciclo di Vita
+            Lifecycle Timeline
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -278,8 +278,8 @@ export default function ECUDetail() {
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Fingerprint className="w-4 h-4 text-primary" />
-            Tracciabilità Blockchain
-            <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/30 ml-2">Simulazione</Badge>
+            Blockchain Traceability
+            <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/30 ml-2">Simulation</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -289,11 +289,11 @@ export default function ECUDetail() {
               <p className="text-xs font-mono">0x{ecu.dppId.replace(/[^a-zA-Z0-9]/g, "").toLowerCase().slice(0, 40)}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Blocchi Registrati</p>
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Registered Blocks</p>
               <p className="text-xs font-mono">{ecu.lifecycle.length}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Ultimo Aggiornamento</p>
+              <p className="text-[9px] text-muted-foreground uppercase tracking-wider">Last Update</p>
               <p className="text-xs font-mono">{ecu.lifecycle[ecu.lifecycle.length - 1]?.date || "N/A"}</p>
             </div>
           </div>

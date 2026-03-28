@@ -1,7 +1,7 @@
 import {
-  LayoutDashboard, Database, Cpu, Zap, Recycle,
-  DollarSign, LogOut, Settings, BarChart3, Target,
-  FlaskConical, FileUp, Globe,
+  LayoutDashboard, Database, Cpu, Zap,
+  DollarSign, LogOut, Settings, Target,
+  FlaskConical, FileUp, Globe, Hexagon,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -12,26 +12,26 @@ import {
 
 const analyticNav = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
-  { title: "Materiali CRM", url: "/materials", icon: Database },
+  { title: "CRM Materials", url: "/materials", icon: Database },
   { title: "BOM & Risk", url: "/bom", icon: FileUp },
 ];
 
 const operativeNav = [
-  { title: "Inventario ECU", url: "/ecu", icon: Cpu },
+  { title: "ECU Inventory", url: "/ecu", icon: Cpu },
   { title: "Decision Engine", url: "/decision-engine", icon: Zap },
-  { title: "Simulazione", url: "/simulation", icon: FlaskConical },
+  { title: "Simulation", url: "/simulation", icon: FlaskConical },
 ];
 
 const strategicNav = [
   { title: "Executive Dashboard", url: "/executive", icon: Globe },
-  { title: "Motore Finanziario", url: "/financial", icon: DollarSign },
+  { title: "Financial Engine", url: "/financial", icon: DollarSign },
   { title: "HaaS Readiness", url: "/haas", icon: Target },
 ];
 
 const layers = [
-  { label: "Layer Analitico", items: analyticNav },
-  { label: "Layer Operativo", items: operativeNav },
-  { label: "Layer Strategico", items: strategicNav },
+  { label: "Analytics", items: analyticNav },
+  { label: "Operations", items: operativeNav },
+  { label: "Strategy", items: strategicNav },
 ];
 
 export function AppSidebar() {
@@ -41,9 +41,12 @@ export function AppSidebar() {
     <Sidebar className="border-r border-border/50">
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center gap-3">
+          <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
+            <Hexagon className="w-4 h-4 text-primary" />
+          </div>
           <div>
             <h2 className="text-sm font-bold tracking-tight text-gradient-cyan">TraceTech</h2>
-            <p className="text-[10px] text-muted-foreground leading-tight">CRM Intelligence Platform</p>
+            <p className="text-[10px] text-muted-foreground leading-tight">CRM Intelligence</p>
           </div>
         </div>
       </div>
@@ -87,7 +90,7 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild>
                     <NavLink to="/settings" className="hover:bg-secondary/50 transition-colors" activeClassName="bg-primary/10 text-primary">
                       <Settings className="w-4 h-4 mr-3 shrink-0" />
-                      <span className="text-sm">Impostazioni</span>
+                      <span className="text-sm">Settings</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

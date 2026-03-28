@@ -24,6 +24,7 @@ import {
 import { clusterInfo, type CriticalMaterial } from "@/data/materialsData";
 import { useData } from "@/hooks/useData";
 import { downloadMaterialsCSV } from "@/lib/reportDownloads";
+import { DataPageSkeleton } from "@/components/DataPageSkeleton";
 
 const clusterBadgeVariant: Record<string, string> = {
   systemic: "bg-[hsl(0,72%,55%)]/15 text-[hsl(0,72%,65%)] border-[hsl(0,72%,55%)]/30",
@@ -116,7 +117,7 @@ function MaterialCard({ material }: { material: CriticalMaterial }) {
           </div>
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <Recycle className="w-3 h-3" />
-            <span>Tasso riciclo: {material.recycleRate}%</span>
+            <span>Recycle rate: {material.recycleRate}%</span>
           </div>
           <div className="flex items-center gap-1.5 text-muted-foreground">
             <MapPin className="w-3 h-3" />
@@ -129,10 +130,14 @@ function MaterialCard({ material }: { material: CriticalMaterial }) {
 }
 
 export default function Materials() {
-  const { materials: criticalMaterials } = useData();
+  const { materials: criticalMaterials, materialsLoading } = useData();
   const [search, setSearch] = useState("");
   const [clusterFilter, setClusterFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("yaleScore");
+
+  if (materialsLoading) {
+    return <DataPageSkeleton cards={4} rows={8} />;
+  }
 
   const filtered = criticalMaterials
     .filter((m) => {
@@ -151,9 +156,9 @@ export default function Materials() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Materiali CRM</h1>
+        <h1 className="text-2xl font-bold tracking-tight">CRM Materials</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Profilo di rischio per {criticalMaterials.length} materiali critici — dati Bosch Circuit ESU
+          Risk profile for {criticalMaterials.length} critical materials tracked in the system
         </p>
       </div>
 
@@ -162,7 +167,7 @@ export default function Materials() {
         <div className="relative flex-1 min-w-[200px] max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Cerca materiale..."
+            placeholder="Search material..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 h-9 bg-secondary/30 border-border/50"
@@ -170,10 +175,10 @@ export default function Materials() {
         </div>
         <Select value={clusterFilter} onValueChange={setClusterFilter}>
           <SelectTrigger className="w-[180px] h-9 bg-secondary/30 border-border/50">
-            <SelectValue placeholder="Tutti i cluster" />
+            <SelectValue placeholder="All clusters" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tutti i cluster</SelectItem>
+            <SelectItem value="all">All clusters</SelectItem>
             <SelectItem value="systemic">Systemic Dual Exposure</SelectItem>
             <SelectItem value="product">Product-Embedded</SelectItem>
             <SelectItem value="sectoral">Sectoral Strategic</SelectItem>
@@ -182,13 +187,13 @@ export default function Materials() {
         </Select>
         <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-[150px] h-9 bg-secondary/30 border-border/50">
-            <SelectValue placeholder="Ordina per" />
+            <SelectValue placeholder="Sort by" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="yaleScore">Yale Score ↓</SelectItem>
             <SelectItem value="hhi">HHI ↓</SelectItem>
-            <SelectItem value="grams">Peso ↓</SelectItem>
-            <SelectItem value="name">Nome A-Z</SelectItem>
+            <SelectItem value="grams">Weight ↓</SelectItem>
+            <SelectItem value="name">Name A-Z</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -217,17 +222,18 @@ export default function Materials() {
         <Card className="border-border/50">
           <CardContent className="py-12 text-center">
             <Database className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">Nessun materiale trovato</p>
+            <p className="text-sm text-muted-foreground">No materials found</p>
+            <p className="text-xs text-muted-foreground mt-1">Try changing search terms or filters.</p>
           </CardContent>
         </Card>
       )}
       {/* Download */}
       <DownloadReportSection
-        title="Esporta Materiali"
+        title="Export Materials"
         actions={[
           {
-            label: `Esporta ${filtered.length} materiali (.csv)`,
-            description: "Esporta lista filtrata con profili di rischio",
+            label: `Export ${filtered.length} materials (.csv)`,
+            description: "Export filtered list with risk profiles",
             icon: "csv",
             onClick: () => downloadMaterialsCSV(filtered),
           },

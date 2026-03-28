@@ -108,14 +108,14 @@ function generateECUs(): ECU[] {
     }));
 
     const lifecycle: ECULifecycleEvent[] = [
-      { date: `${year}-${month}-15`, type: "production", description: `Produzione ${ecuModel.model}`, location: "Reutlingen, DE" },
-      { date: `${year}-${String(Number(month) + 1 > 12 ? 1 : Number(month) + 1).padStart(2, "0")}-10`, type: "installation", description: `Installazione su ${vehicle}`, location: locations[i % locations.length] },
+      { date: `${year}-${month}-15`, type: "production", description: `Production ${ecuModel.model}`, location: "Reutlingen, DE" },
+      { date: `${year}-${String(Number(month) + 1 > 12 ? 1 : Number(month) + 1).padStart(2, "0")}-10`, type: "installation", description: `Installed on ${vehicle}`, location: locations[i % locations.length] },
     ];
     if (status === "maintenance" || status === "eol" || status === "recovered") {
-      lifecycle.push({ date: `${year + 2}-06-20`, type: "maintenance", description: "Manutenzione programmata", location: locations[i % locations.length] });
+      lifecycle.push({ date: `${year + 2}-06-20`, type: "maintenance", description: "Scheduled maintenance", location: locations[i % locations.length] });
     }
     if (status === "eol" || status === "recovered") {
-      lifecycle.push({ date: `${year + 4}-03-12`, type: "eol", description: "Fine vita veicolo", location: locations[i % locations.length] });
+      lifecycle.push({ date: `${year + 4}-03-12`, type: "eol", description: "End of vehicle life", location: locations[i % locations.length] });
     }
     if (status === "recovered") {
       lifecycle.push({ date: `${year + 4}-05-01`, type: "recovery", description: `Recovery via ${path}`, location: "Reutlingen, DE" });
@@ -153,43 +153,43 @@ export const ecuInventory = generateECUs();
 
 export const circularTriggers: CircularTrigger[] = [
   {
-    id: "TRG-001", type: "eol_vehicle", label: "Fine Vita Veicolo",
-    description: "Lotto di 142 veicoli BMW 3 Series raggiungono fine vita programmata Q1 2026",
+    id: "TRG-001", type: "eol_vehicle", label: "Vehicle End of Life",
+    description: "Batch of 142 BMW 3 Series vehicles reaching scheduled end of life Q1 2026",
     timestamp: "2026-02-10T08:30:00Z", severity: "high", affectedECUs: 142,
     affectedMaterials: ["Cobalt", "Palladium", "Tantalum", "Indium"],
     status: "active",
   },
   {
-    id: "TRG-002", type: "geopolitical_shock", label: "Shock Geopolitico — DRC",
-    description: "Instabilità politica nella regione del Katanga, Congo (DRC). Interruzione supply Cobalto prevista +3 mesi",
+    id: "TRG-002", type: "geopolitical_shock", label: "Geopolitical Shock — DRC",
+    description: "Political instability in the Katanga region, Congo (DRC). Cobalt supply disruption expected +3 months",
     timestamp: "2026-02-08T14:15:00Z", severity: "critical", affectedECUs: 850,
     affectedMaterials: ["Cobalt", "Tantalum"],
     status: "active",
   },
   {
-    id: "TRG-003", type: "price_volatility", label: "Volatilità Prezzo Palladio",
-    description: "Palladio supera soglia +25% variazione trimestrale. Attivazione protocollo hedging",
+    id: "TRG-003", type: "price_volatility", label: "Palladium Price Volatility",
+    description: "Palladium exceeds +25% quarterly change threshold. Hedging protocol activated",
     timestamp: "2026-02-05T10:00:00Z", severity: "high", affectedECUs: 400,
     affectedMaterials: ["Palladium"],
     status: "monitoring",
   },
   {
-    id: "TRG-004", type: "regulatory_update", label: "Aggiornamento EU Battery Regulation",
-    description: "Nuovi requisiti di contenuto riciclato minimo per Cobalto (16%) e Litio (6%) dal 2027",
+    id: "TRG-004", type: "regulatory_update", label: "EU Battery Regulation Update",
+    description: "New minimum recycled content requirements for Cobalt (16%) and Lithium (6%) from 2027",
     timestamp: "2026-01-28T09:00:00Z", severity: "medium", affectedECUs: 1200,
     affectedMaterials: ["Cobalt", "Nickel", "Manganese"],
     status: "monitoring",
   },
   {
-    id: "TRG-005", type: "component_replacement", label: "Sostituzione Batch ECU-ESP9",
-    description: "Campagna di richiamo per 230 ECU-ESP9 con difetto firmware. Opportunità recovery CRM",
+    id: "TRG-005", type: "component_replacement", label: "ECU-ESP9 Batch Replacement",
+    description: "Recall campaign for 230 ECU-ESP9 units with firmware defect. CRM recovery opportunity",
     timestamp: "2026-01-20T11:30:00Z", severity: "medium", affectedECUs: 230,
     affectedMaterials: ["Platinum", "Gold", "Silver"],
     status: "resolved",
   },
   {
-    id: "TRG-006", type: "geopolitical_shock", label: "Restrizioni Export Cina — Germanio",
-    description: "Nuove restrizioni all'export di Germanio dalla Cina. Impatto su supply globale -30%",
+    id: "TRG-006", type: "geopolitical_shock", label: "China Export Restrictions — Germanium",
+    description: "New Germanium export restrictions from China. Impact on global supply -30%",
     timestamp: "2026-02-12T16:00:00Z", severity: "critical", affectedECUs: 600,
     affectedMaterials: ["Germanium", "Indium", "Tungsten"],
     status: "active",
