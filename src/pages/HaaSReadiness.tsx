@@ -9,6 +9,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, Tooltip, ReferenceLine,
 } from "recharts";
 import { haasMetrics } from "@/data/ecuData";
+import { DownloadReportSection } from "@/components/DownloadReportSection";
+import { downloadHaaSReport } from "@/lib/reportDownloads";
 
 const overallScore = Math.round(haasMetrics.reduce((s, m) => s + m.current, 0) / haasMetrics.length);
 const readyDimensions = haasMetrics.filter((m) => m.current >= m.threshold).length;
@@ -109,7 +111,6 @@ export default function HaaSReadiness() {
                 <PolarGrid stroke="hsl(220,14%,18%)" />
                 <PolarAngleAxis dataKey="dimension" tick={{ fill: "hsl(215,15%,55%)", fontSize: 9 }} />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar name="Corrente" dataKey="current" stroke="hsl(190,85%,50%)" fill="hsl(190,85%,50%)" fillOpacity={0.15} strokeWidth={2} />
                 <Radar name="Current" dataKey="current" stroke="hsl(190,85%,50%)" fill="hsl(190,85%,50%)" fillOpacity={0.15} strokeWidth={2} />
                 <Radar name="Threshold" dataKey="threshold" stroke="hsl(38,92%,55%)" fill="none" strokeWidth={1.5} strokeDasharray="4 4" />
               </RadarChart>
@@ -200,6 +201,13 @@ export default function HaaSReadiness() {
           </div>
         </CardContent>
       </Card>
+
+      <DownloadReportSection
+        title="Export HaaS Assessment"
+        actions={[
+          { label: "HaaS Report (.txt)", description: "Maturity assessment report", icon: "txt", onClick: downloadHaaSReport },
+        ]}
+      />
     </div>
   );
 }

@@ -1,12 +1,72 @@
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import {
-  User, Shield, Bell, Database, Info, Hexagon,
+  User, Shield, Bell, Database, Info, Hexagon, RotateCcw,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+interface NotifSettings {
+  criticalRisk: boolean;
+  priceVolatility: boolean;
+  recoveryMilestones: boolean;
+  weeklyDigest: boolean;
+}
+
+interface SecuritySettings {
+  twoFactor: boolean;
+  sessionTimeout: string;
+  apiAccess: boolean;
+}
 
 export default function Settings() {
   const { user, roles } = useAuth();
+  const { toast } = useToast();
+
+  const [notifications, setNotifications] = useState<NotifSettings>({
+    criticalRisk: true,
+    priceVolatility: true,
+    recoveryMilestones: false,
+    weeklyDigest: false,
+  });
+
+  const [security, setSecurity] = useState<SecuritySettings>({
+    twoFactor: false,
+    sessionTimeout: "8 hours",
+    apiAccess: true,
+  });
+
+  const toggleNotif = useCallback((key: keyof NotifSettings) => {
+    setNotifications((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      toast({ title: `${key} ${next[key] ? "enabled" : "disabled"}`, description: "Notification preference saved." });
+      return next;
+    });
+  }, [toast]);
+
+  const toggleSecurity = useCallback((key: keyof SecuritySettings) => {
+    if (key === "twoFactor") {
+      setSecurity((prev) => {
+        const next = { ...prev, twoFactor: !prev.twoFactor };
+        toast({ title: `2FA ${next.twoFactor ? "enabled" : "disabled"}`, description: next.twoFactor ? "Two-factor authentication activated." : "Two-factor authentication deactivated." });
+        return next;
+      });
+    } else if (key === "apiAccess") {
+      setSecurity((prev) => {
+        const next = { ...prev, apiAccess: !prev.apiAccess };
+        toast({ title: `API access ${next.apiAccess ? "enabled" : "disabled"}` });
+        return next;
+      });
+    }
+  }, [toast]);
+
+  const resetDefaults = useCallback(() => {
+    setNotifications({ criticalRisk: true, priceVolatility: true, recoveryMilestones: false, weeklyDigest: false });
+    setSecurity({ twoFactor: false, sessionTimeout: "8 hours", apiAccess: true });
+    toast({ title: "Settings reset", description: "All preferences restored to defaults." });
+  }, [toast]);
 
   return (
     <div className="space-y-6">
@@ -57,21 +117,28 @@ export default function Settings() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {[
-              { label: "Two-factor authentication", status: "Disabled", ok: false },
-              { label: "Session timeout", status: "8 hours", ok: true },
-              { label: "API access", status: "Enabled", ok: true },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+            {([
+              { label: "Two-factor authentication", key: "twoFactor" as const, getValue: () => security.twoFactor },
+              { label: "API access", key: "apiAccess" as const, getValue: () => security.apiAccess },
+            ]).map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 cursor-pointer hover:bg-secondary/50 transition-colors"
+                onClick={() => toggleSecurity(item.key)}
+              >
                 <p className="text-xs text-muted-foreground">{item.label}</p>
                 <Badge
                   variant="outline"
-                  className={`text-[9px] ${item.ok ? "bg-success/10 text-success border-success/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}
+                  className={`text-[9px] ${item.getValue() ? "bg-success/10 text-success border-success/30" : "bg-destructive/10 text-destructive border-destructive/30"}`}
                 >
-                  {item.status}
+                  {item.getValue() ? "Enabled" : "Disabled"}
                 </Badge>
               </div>
             ))}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+              <p className="text-xs text-muted-foreground">Session timeout</p>
+              <Badge variant="outline" className="text-[9px] bg-success/10 text-success border-success/30">{security.sessionTimeout}</Badge>
+            </div>
           </CardContent>
         </Card>
 
@@ -84,16 +151,20 @@ export default function Settings() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {[
-              { label: "Critical risk alerts", enabled: true },
-              { label: "Price volatility triggers", enabled: true },
-              { label: "Recovery milestones", enabled: false },
-              { label: "Weekly digest", enabled: false },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+            {([
+              { label: "Critical risk alerts", key: "criticalRisk" as const },
+              { label: "Price volatility triggers", key: "priceVolatility" as const },
+              { label: "Recovery milestones", key: "recoveryMilestones" as const },
+              { label: "Weekly digest", key: "weeklyDigest" as const },
+            ]).map((item) => (
+              <div
+                key={item.label}
+                className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 cursor-pointer hover:bg-secondary/50 transition-colors"
+                onClick={() => toggleNotif(item.key)}
+              >
                 <p className="text-xs text-muted-foreground">{item.label}</p>
-                <div className={`w-7 h-4 rounded-full transition-colors ${item.enabled ? "bg-primary" : "bg-border"}`}>
-                  <div className={`w-3 h-3 rounded-full bg-white mt-0.5 transition-transform ${item.enabled ? "translate-x-3.5" : "translate-x-0.5"}`} />
+                <div className={`w-7 h-4 rounded-full transition-colors ${notifications[item.key] ? "bg-primary" : "bg-border"}`}>
+                  <div className={`w-3 h-3 rounded-full bg-white mt-0.5 transition-transform ${notifications[item.key] ? "translate-x-3.5" : "translate-x-0.5"}`} />
                 </div>
               </div>
             ))}
@@ -140,6 +211,10 @@ export default function Settings() {
               <p className="text-[10px] text-muted-foreground">CRM Intelligence Platform · © 2026</p>
             </div>
             <div className="ml-auto flex items-center gap-2">
+              <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={resetDefaults}>
+                <RotateCcw className="w-3 h-3" />
+                Reset Defaults
+              </Button>
               <Badge variant="outline" className="text-[9px] bg-success/10 text-success border-success/30">
                 <Info className="w-2.5 h-2.5 mr-1" />
                 Up to date

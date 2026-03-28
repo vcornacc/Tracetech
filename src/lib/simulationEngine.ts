@@ -26,7 +26,12 @@ export type ScenarioType =
   | "supply_disruption"
   | "geopolitical_crisis"
   | "regulatory_change"
-  | "demand_surge";
+  | "demand_surge"
+  | "recycling_improvement"
+  | "supplier_diversification"
+  | "blockchain_traceability"
+  | "recovery_hub"
+  | "robotic_disassembly";
 
 export interface ScenarioParameter {
   type: ScenarioType;
@@ -42,6 +47,16 @@ export interface ScenarioParameter {
   affectedMaterials?: string[];
   // For demand_surge
   demandIncreasePct?: number;
+  // For recycling_improvement
+  recycleRateBoostPct?: number;
+  // For supplier_diversification
+  hhiReductionPct?: number;
+  // For blockchain_traceability
+  transparencyBoostPct?: number;
+  // For recovery_hub
+  recoveryCapacityIncreasePct?: number;
+  // For robotic_disassembly
+  disassemblyEfficiencyPct?: number;
 }
 
 export interface SimulationResult {
@@ -123,6 +138,36 @@ export const SCENARIO_TEMPLATES: { id: string; name: string; description: string
     name: "Copper Price Drop -15%",
     description: "Global economic slowdown causes a 15% drop in copper price",
     params: { type: "price_change", materialName: "Copper", priceChangePct: -15 },
+  },
+  {
+    id: "recycling-boost",
+    name: "Recycling Rate +30%",
+    description: "Investment in hydrometallurgy and pyrometallurgy infrastructure increases recycling rate by 30% across all materials",
+    params: { type: "recycling_improvement", recycleRateBoostPct: 30 },
+  },
+  {
+    id: "supplier-diversification",
+    name: "Supplier Diversification — HHI -25%",
+    description: "Strategic supplier diversification reduces HHI concentration index by 25% via new partnerships",
+    params: { type: "supplier_diversification", hhiReductionPct: 25 },
+  },
+  {
+    id: "blockchain-traceability",
+    name: "Blockchain Traceability Integration",
+    description: "Deploy blockchain-based supply chain traceability improving ESG transparency and supplier accountability by 20%",
+    params: { type: "blockchain_traceability", transparencyBoostPct: 20 },
+  },
+  {
+    id: "recovery-hub",
+    name: "Regional Recovery Hub Co-Investment",
+    description: "Co-investment in 3 regional recovery hubs increases recovery capacity by 40%, reducing primary extraction dependency",
+    params: { type: "recovery_hub", recoveryCapacityIncreasePct: 40 },
+  },
+  {
+    id: "robotic-disassembly",
+    name: "Robotic Disassembly Systems",
+    description: "Introduction of automated robotic disassembly increases selective recovery efficiency by 35%",
+    params: { type: "robotic_disassembly", disassemblyEfficiencyPct: 35 },
   },
 ];
 
@@ -254,6 +299,126 @@ export function runSimulation(
 
       recommendations.push(`Secure long-term contracts for key materials`);
       recommendations.push(`Accelerate recovery processes to reduce dependence on primary sourcing`);
+      break;
+    }
+    case "recycling_improvement": {
+      const boostPct = params.recycleRateBoostPct ?? 30;
+      scenarioName = `Recycling rate improvement +${boostPct}%`;
+      for (const mat of materials) {
+        const currentRate = mat.recycle_rate;
+        const newRate = Math.min(100, currentRate * (1 + boostPct / 100));
+        const rateImprovement = newRate - currentRate;
+        // Higher recycling rate reduces supply risk and price by reducing primary extraction dependency
+        const priceReduction = -(rateImprovement * 0.8); // Negative = cost savings
+        const impact = calculatePriceImpact(
+          mat,
+          priceReduction,
+          ecuMaterialCounts.get(mat.id) ?? 0,
+          ecuMaterialGrams.get(mat.id) ?? 0
+        );
+        impact.newRisk = Math.max(0, impact.originalRisk - rateImprovement * 0.4);
+        impact.riskChangePct = impact.originalRisk > 0 ? Math.round(((impact.newRisk - impact.originalRisk) / impact.originalRisk) * 100) : 0;
+        materialImpacts.push(impact);
+        totalCostImpact += impact.costImpactEuro;
+      }
+      recommendations.push(`Invest in hydrometallurgy and pyrometallurgy facilities`);
+      recommendations.push(`Partner with certified recycling operators across EU`);
+      recommendations.push(`Implement take-back logistics for end-of-life ECUs`);
+      recommendations.push(`Target materials with lowest current recycling rates first`);
+      break;
+    }
+    case "supplier_diversification": {
+      const hhiReduction = params.hhiReductionPct ?? 25;
+      scenarioName = `Supplier diversification — HHI -${hhiReduction}%`;
+      const highConcentrationMats = materials.filter((m) => m.hhi > 2000);
+      for (const mat of highConcentrationMats) {
+        const hhiDrop = mat.hhi * (hhiReduction / 100);
+        const riskReduction = (hhiDrop / mat.hhi) * 15;
+        const priceStabilization = -(hhiDrop / mat.hhi) * 5;
+        const impact = calculatePriceImpact(
+          mat,
+          priceStabilization,
+          ecuMaterialCounts.get(mat.id) ?? 0,
+          ecuMaterialGrams.get(mat.id) ?? 0
+        );
+        impact.newRisk = Math.max(0, impact.originalRisk - riskReduction);
+        impact.riskChangePct = impact.originalRisk > 0 ? Math.round(((impact.newRisk - impact.originalRisk) / impact.originalRisk) * 100) : 0;
+        materialImpacts.push(impact);
+        totalCostImpact += impact.costImpactEuro;
+      }
+      recommendations.push(`Onboard new suppliers from ASEAN and South America regions`);
+      recommendations.push(`Establish strategic reserves for systemic-cluster materials`);
+      recommendations.push(`Negotiate multi-source framework agreements`);
+      break;
+    }
+    case "blockchain_traceability": {
+      const transparencyBoost = params.transparencyBoostPct ?? 20;
+      scenarioName = `Blockchain traceability — ESG transparency +${transparencyBoost}%`;
+      for (const mat of materials) {
+        const esgImprovement = transparencyBoost * 0.5;
+        const riskReduction = esgImprovement * 0.3;
+        const impact = calculatePriceImpact(
+          mat,
+          -1, // Small cost reduction via fraud/waste elimination
+          ecuMaterialCounts.get(mat.id) ?? 0,
+          ecuMaterialGrams.get(mat.id) ?? 0
+        );
+        impact.newRisk = Math.max(0, impact.originalRisk - riskReduction);
+        impact.riskChangePct = impact.originalRisk > 0 ? Math.round(((impact.newRisk - impact.originalRisk) / impact.originalRisk) * 100) : 0;
+        materialImpacts.push(impact);
+        totalCostImpact += impact.costImpactEuro;
+      }
+      recommendations.push(`Deploy distributed ledger for supply chain provenance tracking`);
+      recommendations.push(`Integrate blockchain with existing DPP infrastructure`);
+      recommendations.push(`Require blockchain verification for conflict mineral suppliers`);
+      recommendations.push(`ESG scoring improvement enables premium market positioning`);
+      break;
+    }
+    case "recovery_hub": {
+      const capacityIncrease = params.recoveryCapacityIncreasePct ?? 40;
+      scenarioName = `Regional recovery hub co-investment — capacity +${capacityIncrease}%`;
+      const recoverableMats = materials.filter((m) => m.recycle_rate > 0);
+      for (const mat of recoverableMats) {
+        const recoveryBoost = capacityIncrease * (mat.recycle_rate / 100);
+        const priceReduction = -(recoveryBoost * 0.6);
+        const impact = calculatePriceImpact(
+          mat,
+          priceReduction,
+          ecuMaterialCounts.get(mat.id) ?? 0,
+          ecuMaterialGrams.get(mat.id) ?? 0
+        );
+        impact.newRisk = Math.max(0, impact.originalRisk - recoveryBoost * 0.5);
+        impact.riskChangePct = impact.originalRisk > 0 ? Math.round(((impact.newRisk - impact.originalRisk) / impact.originalRisk) * 100) : 0;
+        materialImpacts.push(impact);
+        totalCostImpact += impact.costImpactEuro;
+      }
+      recommendations.push(`Establish recovery hubs in Germany, Italy, and France for EU coverage`);
+      recommendations.push(`Co-invest with OEM partners to share CAPEX burden`);
+      recommendations.push(`Focus recovery hub specialization by material cluster`);
+      recommendations.push(`Reduction in primary extraction dependency estimated at ${Math.round(capacityIncrease * 0.3)}%`);
+      break;
+    }
+    case "robotic_disassembly": {
+      const efficiencyPct = params.disassemblyEfficiencyPct ?? 35;
+      scenarioName = `Robotic disassembly systems — efficiency +${efficiencyPct}%`;
+      for (const mat of materials) {
+        const recoveryImpact = efficiencyPct * (mat.recycle_rate / 100) * 0.8;
+        const priceReduction = -(recoveryImpact * 0.5);
+        const impact = calculatePriceImpact(
+          mat,
+          priceReduction,
+          ecuMaterialCounts.get(mat.id) ?? 0,
+          ecuMaterialGrams.get(mat.id) ?? 0
+        );
+        impact.newRisk = Math.max(0, impact.originalRisk - recoveryImpact * 0.3);
+        impact.riskChangePct = impact.originalRisk > 0 ? Math.round(((impact.newRisk - impact.originalRisk) / impact.originalRisk) * 100) : 0;
+        materialImpacts.push(impact);
+        totalCostImpact += impact.costImpactEuro;
+      }
+      recommendations.push(`Deploy robotic disassembly lines for ECU selective recovery`);
+      recommendations.push(`Target high-value PGM and REE extraction first`);
+      recommendations.push(`Integrate with AI-powered sorting for maximum yield`);
+      recommendations.push(`Expected OPEX reduction: ${Math.round(efficiencyPct * 0.4)}% on recovery operations`);
       break;
     }
   }

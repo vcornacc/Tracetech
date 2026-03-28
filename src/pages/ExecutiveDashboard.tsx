@@ -25,6 +25,8 @@ import {
 import { clusterInfo } from "@/data/materialsData";
 import { useData } from "@/hooks/useData";
 import { DataPageSkeleton } from "@/components/DataPageSkeleton";
+import { DownloadReportSection } from "@/components/DownloadReportSection";
+import { downloadExecutiveCSV, downloadDashboardReport } from "@/lib/reportDownloads";
 
 const riskColors: Record<string, string> = {
   low: "hsl(160,70%,45%)",
@@ -117,12 +119,12 @@ export default function ExecutiveDashboard() {
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <MetricCard title="CRM Materials" value={criticalMaterials.length} subtitle="monitored" icon={<Activity className="w-5 h-5" />} variant="cyan" />
-        <MetricCard title="High Exposure" value={highExposure} subtitle="Yale ≥ 60 + EU Critical" icon={<AlertTriangle className="w-5 h-5" />} variant="critical" />
-        <MetricCard title="Tracked ECUs" value={totalECU} subtitle="in DPP system" icon={<Cpu className="w-5 h-5" />} variant="amber" />
-        <MetricCard title="Recovery Rate" value={`${recoveryRate}%`} subtitle="live portfolio" icon={<Recycle className="w-5 h-5" />} variant="success" />
-        <MetricCard title="Avg Risk Score" value={`${avgRiskScore}/100`} subtitle="ECU portfolio" icon={<Shield className="w-5 h-5" />} variant="critical" />
-        <MetricCard title="CRM Value" value={`€${totalCrmValue.toLocaleString()}`} subtitle="recoverable" icon={<DollarSign className="w-5 h-5" />} variant="cyan" />
+        <MetricCard title="CRM Materials" value={criticalMaterials.length} subtitle="monitored" icon={<Activity className="w-5 h-5" />} variant="cyan" href="/materials" />
+        <MetricCard title="High Exposure" value={highExposure} subtitle="Yale ≥ 60 + EU Critical" icon={<AlertTriangle className="w-5 h-5" />} variant="critical" href="/bom" />
+        <MetricCard title="Tracked ECUs" value={totalECU} subtitle="in DPP system" icon={<Cpu className="w-5 h-5" />} variant="amber" href="/ecu" />
+        <MetricCard title="Recovery Rate" value={`${recoveryRate}%`} subtitle="live portfolio" icon={<Recycle className="w-5 h-5" />} variant="success" href="/decision-engine" />
+        <MetricCard title="Avg Risk Score" value={`${avgRiskScore}/100`} subtitle="ECU portfolio" icon={<Shield className="w-5 h-5" />} variant="critical" href="/simulation" />
+        <MetricCard title="CRM Value" value={`€${totalCrmValue.toLocaleString()}`} subtitle="recoverable" icon={<DollarSign className="w-5 h-5" />} variant="cyan" href="/financial" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -223,6 +225,14 @@ export default function ExecutiveDashboard() {
           </div>
         </CardContent>
       </Card>
+
+      <DownloadReportSection
+        title="Export Executive Report"
+        actions={[
+          { label: "Executive Report (.txt)", description: "Full strategic overview", icon: "txt", onClick: downloadDashboardReport },
+          { label: "Executive Data (.csv)", description: "KPIs and exposure data", icon: "csv", onClick: downloadExecutiveCSV },
+        ]}
+      />
     </div>
   );
 }

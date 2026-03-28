@@ -1,4 +1,5 @@
 import { criticalMaterials, clusterInfo } from "@/data/materialsData";
+import { haasMetrics } from "@/data/ecuData";
 import type { CriticalMaterial } from "@/data/materialsData";
 
 function downloadFile(content: string, filename: string, mimeType: string) {
@@ -196,4 +197,72 @@ export function downloadMaterialDetailCSV(material: CriticalMaterial) {
     `CRIS_${material.name}_${timestamp()}.csv`,
     "text/csv"
   );
+}
+
+// ── Executive Dashboard Export ──
+export function downloadExecutiveCSV() {
+  const avgYale = Math.round(criticalMaterials.reduce((s, m) => s + m.yaleScore, 0) / criticalMaterials.length);
+  const highRisk = criticalMaterials.filter((m) => m.yaleScore >= 60).length;
+  const avgRecovery = Math.round(criticalMaterials.reduce((s, m) => s + m.recycleRate, 0) / criticalMaterials.length);
+
+  const countryCounts = new Map<string, number>();
+  criticalMaterials.forEach((m) => m.topProducers.forEach((c) => countryCounts.set(c, (countryCounts.get(c) ?? 0) + 1)));
+  const totalRefs = Array.from(countryCounts.values()).reduce((s, c) => s + c, 0);
+  const geo = Array.from(countryCounts.entries())
+    .map(([country, count]) => [country, Math.round((count / totalRefs) * 100)])
+    .sort((a, b) => (b[1] as number) - (a[1] as number));
+
+  const rows = [
+    ["CRIS - Executive Strategic Report"],
+    [`Date: ${timestamp()}`],
+    [],
+    ["KPI", "Value"],
+    ["CRM Materials Tracked", criticalMaterials.length],
+    ["High Exposure Materials", highRisk],
+    ["Average Yale Score", avgYale],
+    ["Average Recovery Rate %", avgRecovery],
+    [],
+    ["Geographic CRM Exposure"],
+    ["Country", "Share %"],
+    ...geo.map(([c, s]) => [c, s]),
+    [],
+    ["Cluster Distribution"],
+    ["Cluster", "Count"],
+    ...Object.entries(clusterInfo).map(([key, info]) => [
+      info.label,
+      criticalMaterials.filter((m) => m.cluster === key).length,
+    ]),
+  ];
+  downloadFile(rows.map((r) => r.join(";")).join("\n"), `CRIS_Executive_${timestamp()}.csv`, "text/csv");
+}
+
+// ── HaaS Readiness Export ──
+export function downloadHaaSReport() {
+  const overallScore = Math.round(haasMetrics.reduce((s, m) => s + m.current, 0) / haasMetrics.length);
+  const readyCount = haasMetrics.filter((m) => m.current >= m.threshold).length;
+
+  const lines = [
+    "═══════════════════════════════════════════════════════════════",
+    "  CRIS — HaaS Readiness Assessment Report",
+    `  Generated: ${new Date().toLocaleString("en-US")}`,
+    "═══════════════════════════════════════════════════════════════",
+    "",
+    "1. OVERALL READINESS",
+    "───────────────────────────────────────────────────────────────",
+    `  Overall Score:          ${overallScore}%`,
+    `  Dimensions Above Threshold: ${readyCount}/${haasMetrics.length}`,
+    "",
+    "2. DIMENSION DETAILS",
+    "───────────────────────────────────────────────────────────────",
+    ...haasMetrics.map((m) => {
+      const status = m.current >= m.threshold ? "✓ READY" : "✗ GAP";
+      const bar = "█".repeat(Math.round(m.current / 5)) + "░".repeat(Math.max(0, 20 - Math.round(m.current / 5)));
+      return `  ${m.dimension.padEnd(26)} [${bar}] ${m.current}% / ${m.threshold}%  ${status}`;
+    }),
+    "",
+    "═══════════════════════════════════════════════════════════════",
+    "  End of Report",
+    "═══════════════════════════════════════════════════════════════",
+  ];
+  downloadFile(lines.join("\n"), `CRIS_HaaS_Report_${timestamp()}.txt`, "text/plain");
 }

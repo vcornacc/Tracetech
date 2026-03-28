@@ -139,6 +139,7 @@ export default function Dashboard() {
           subtitle="Yale ≥ 60 + EU Critical"
           icon={<AlertTriangle className="w-5 h-5" />}
           variant="critical"
+          href="/bom"
         />
         <MetricCard
           title="Recovery Rate"
@@ -146,6 +147,7 @@ export default function Dashboard() {
           subtitle="live average"
           icon={<Recycle className="w-5 h-5" />}
           variant="success"
+          href="/ecu"
         />
         <MetricCard
           title="Geopolitical Risk"
@@ -153,6 +155,7 @@ export default function Dashboard() {
           subtitle="concentration index"
           icon={<Globe className="w-5 h-5" />}
           variant="amber"
+          href="/executive"
         />
       </div>
 

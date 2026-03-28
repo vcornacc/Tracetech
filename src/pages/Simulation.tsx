@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   FlaskConical, Play, AlertTriangle, TrendingUp, Shield,
-  Globe, FileText, Zap, BarChart3, ArrowRight,
+  Globe, FileText, Zap, BarChart3, ArrowRight, Recycle, Cpu, Link2, Factory, Bot,
 } from "lucide-react";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
@@ -25,6 +25,11 @@ const typeIcons: Record<string, typeof Globe> = {
   geopolitical_crisis: Globe,
   regulatory_change: FileText,
   demand_surge: BarChart3,
+  recycling_improvement: Recycle,
+  supplier_diversification: Shield,
+  blockchain_traceability: Link2,
+  recovery_hub: Factory,
+  robotic_disassembly: Bot,
 };
 
 const severityConfig: Record<string, { label: string; class: string }> = {

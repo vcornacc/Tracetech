@@ -175,8 +175,7 @@ export default function FinancialEngine() {
           <CardContent className="p-4 text-center">
             <Calculator className="w-5 h-5 mx-auto mb-2 text-primary" />
             <p className="text-[9px] text-muted-foreground uppercase">Payback Period</p>
-            <p className="text-xl font-bold mt-1">{results.paybackYear > 0 ? `${results.paybackYear} anni` : "N/A"}</p>
-                      <p className="text-xl font-bold mt-1">{results.paybackYear > 0 ? `${results.paybackYear} yrs` : "N/A"}</p>
+            <p className="text-xl font-bold mt-1">{results.paybackYear > 0 ? `${results.paybackYear} yrs` : "N/A"}</p>
           </CardContent>
         </Card>
         <Card className="border-border/50">
