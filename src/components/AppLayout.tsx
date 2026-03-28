@@ -13,6 +13,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useData } from "@/hooks/useData";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const routeLabels: Record<string, string> = {
   "/": "Dashboard",
@@ -57,6 +58,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </nav>
             </div>
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Sheet>
                 <SheetTrigger asChild>
                   <button className="p-2 rounded-md hover:bg-secondary transition-colors relative">

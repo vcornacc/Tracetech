@@ -39,7 +39,7 @@ export default function ECUDetail() {
         <Button variant="ghost" size="sm" onClick={() => navigate("/ecu")}>
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to inventory
         </Button>
-        <p className="text-muted-foreground">ECU not found.</p>
+        <p className="text-muted-foreground">No live ECU record found for this page.</p>
       </div>
     );
   }
@@ -273,13 +273,13 @@ export default function ECUDetail() {
         </CardContent>
       </Card>
 
-      {/* Blockchain Traceability Simulation */}
+      {/* Blockchain Traceability */}
       <Card className="border-border/50 border-primary/10">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
             <Fingerprint className="w-4 h-4 text-primary" />
             Blockchain Traceability
-            <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/30 ml-2">Simulation</Badge>
+            <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/30 ml-2">Live View</Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>

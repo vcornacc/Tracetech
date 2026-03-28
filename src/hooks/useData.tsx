@@ -2,22 +2,20 @@
  * Unified Data Provider
  *
  * Fetches data from Supabase and transforms it to match the existing
- * interface used by all pages. Falls back to mock data if Supabase
- * is unavailable or returns empty results.
+ * interface used by all pages.
+ *
+ * Live-data only mode: when Supabase is unavailable or empty,
+ * arrays stay empty and pages render their empty states.
  */
 
 import React, { createContext, useContext, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  criticalMaterials as mockMaterials,
   clusterInfo,
   type CriticalMaterial,
-  type MaterialRiskProfile,
 } from "@/data/materialsData";
 import {
-  ecuInventory as mockEcuInventory,
-  circularTriggers as mockTriggers,
   type ECU,
   type CircularTrigger,
 } from "@/data/ecuData";
@@ -41,7 +39,7 @@ interface DataContextType {
   // Cluster info (static)
   clusterInfo: typeof clusterInfo;
   // Source indicator
-  dataSource: "supabase" | "mock";
+  dataSource: "supabase" | "none";
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -129,10 +127,10 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const hasSupabaseTriggers = triggersQuery.data && triggersQuery.data.length > 0;
 
     // Materials
-    const materialsRaw = hasSupabaseMaterials ? materialsQuery.data! : [];
+    const materialsRaw = materialsQuery.data ?? [];
     const materials = hasSupabaseMaterials
       ? materialsQuery.data!.map(transformMaterial)
-      : mockMaterials;
+      : [];
 
     // ECUs - transform Supabase rows to match legacy ECU interface
     let ecuInventory: ECU[];
@@ -172,7 +170,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         } as ECU & { _supabaseId: string };
       });
     } else {
-      ecuInventory = mockEcuInventory;
+      ecuInventory = [];
     }
 
     // Triggers
@@ -190,7 +188,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         status: row.status,
       }));
     } else {
-      circularTriggersData = mockTriggers;
+      circularTriggersData = [];
     }
 
     return {
@@ -202,7 +200,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       circularTriggers: circularTriggersData,
       triggersLoading: triggersQuery.isLoading,
       clusterInfo,
-      dataSource: hasSupabaseMaterials ? "supabase" : "mock",
+      dataSource: hasSupabaseMaterials || hasSupabaseEcus || hasSupabaseTriggers ? "supabase" : "none",
     };
   }, [materialsQuery.data, materialsQuery.isLoading, ecusQuery.data, ecusQuery.isLoading, triggersQuery.data, triggersQuery.isLoading]);
 

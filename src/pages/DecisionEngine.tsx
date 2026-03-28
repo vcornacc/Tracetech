@@ -10,10 +10,9 @@ import {
   Recycle, Wrench, RefreshCw, Cpu, ArrowRight,
 } from "lucide-react";
 import {
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell,
+  ResponsiveContainer, Cell,
   PieChart, Pie, Tooltip,
 } from "recharts";
-import { type CircularTrigger } from "@/data/ecuData";
 import { useData } from "@/hooks/useData";
 import { DataPageSkeleton } from "@/components/DataPageSkeleton";
 
@@ -33,7 +32,7 @@ const severityConfig: Record<string, { label: string; class: string }> = {
 };
 
 export default function DecisionEngine() {
-  const { ecuInventory, circularTriggers, ecusLoading, triggersLoading } = useData();
+  const { ecuInventory, circularTriggers, ecusLoading, triggersLoading, dataSource } = useData();
   const [statusFilter, setStatusFilter] = useState("all");
 
   if (ecusLoading || triggersLoading) {
@@ -48,16 +47,83 @@ export default function DecisionEngine() {
     { name: "Pending", value: ecuInventory.filter((e) => e.circularPath === "pending").length, color: "hsl(215,15%,40%)" },
   ];
 
-  const clusterDecisionMatrix = [
-    { cluster: "Systemic Dual", priority: "Selective Recovery", rationale: "Maximise recovery of high-risk CRMs", urgency: 95 },
-    { cluster: "Product-Embedded", priority: "Refurbish", rationale: "Extend component lifespan with embedded CRMs", urgency: 75 },
-    { cluster: "Sectoral Strategic", priority: "Reuse", rationale: "Direct reuse in sectoral applications", urgency: 60 },
-    { cluster: "Operational Backbone", priority: "Repair", rationale: "Cost-effective maintenance, low CRM risk", urgency: 40 },
+  const riskBuckets = [
+    {
+      bucket: "Critical Risk (>= 75)",
+      items: ecuInventory.filter((e) => e.riskScore >= 75),
+      priority: "Selective Recovery",
+      rationale: "Focus on CRM extraction from highest-risk units",
+    },
+    {
+      bucket: "High Risk (60-74)",
+      items: ecuInventory.filter((e) => e.riskScore >= 60 && e.riskScore < 75),
+      priority: "Refurbish",
+      rationale: "Preserve value while reducing replacement demand",
+    },
+    {
+      bucket: "Medium Risk (40-59)",
+      items: ecuInventory.filter((e) => e.riskScore >= 40 && e.riskScore < 60),
+      priority: "Reuse",
+      rationale: "Redeploy healthy units in compatible platforms",
+    },
+    {
+      bucket: "Low Risk (< 40)",
+      items: ecuInventory.filter((e) => e.riskScore < 40),
+      priority: "Repair",
+      rationale: "Extend service life with low intervention cost",
+    },
   ];
+
+  const decisionMatrix = riskBuckets
+    .map((bucket) => {
+      const count = bucket.items.length;
+      const avgRisk = count > 0 ? Math.round(bucket.items.reduce((sum, ecu) => sum + ecu.riskScore, 0) / count) : 0;
+      const avgHealth = count > 0 ? Math.round(bucket.items.reduce((sum, ecu) => sum + ecu.healthScore, 0) / count) : 0;
+      const urgency = Math.min(100, avgRisk);
+
+      return {
+        bucket: bucket.bucket,
+        count,
+        avgRisk,
+        avgHealth,
+        priority: bucket.priority,
+        rationale: bucket.rationale,
+        urgency,
+      };
+    })
+    .filter((row) => row.count > 0);
 
   const filteredTriggers = circularTriggers.filter(
     (t) => statusFilter === "all" || t.status === statusFilter
   );
+
+  const ecusInPipeline = ecuInventory.filter((e) => e.status === "eol" || e.status === "in_recovery").length;
+  const totalCrmGrams = ecuInventory.reduce((sum, ecu) => sum + ecu.crmContentGrams, 0);
+  const recoverableCrmGrams = ecuInventory
+    .filter((e) => e.status !== "active")
+    .reduce((sum, ecu) => sum + ecu.crmContentGrams, 0);
+  const recoverableShare = totalCrmGrams > 0 ? Math.round((recoverableCrmGrams / totalCrmGrams) * 100) : 0;
+  const activeFlows = new Set(
+    ecuInventory
+      .filter((e) => e.circularPath !== "pending")
+      .map((e) => e.circularPath)
+  ).size;
+
+  const avgRecoveryRate =
+    ecuInventory.length > 0
+      ? Math.round(ecuInventory.reduce((sum, ecu) => sum + ecu.recoveryRate, 0) / ecuInventory.length)
+      : 0;
+  const avgRemainingLife =
+    ecuInventory.filter((e) => e.status === "active").length > 0
+      ? Math.round(
+          ecuInventory
+            .filter((e) => e.status === "active")
+            .reduce((sum, ecu) => sum + ecu.remainingLifeMonths, 0) /
+            ecuInventory.filter((e) => e.status === "active").length
+        )
+      : 0;
+  const maintenanceUnits = ecuInventory.filter((e) => e.status === "maintenance").length;
+  const highRiskUnits = ecuInventory.filter((e) => e.riskScore >= 75).length;
 
   return (
     <div className="space-y-6">
@@ -67,6 +133,14 @@ export default function DecisionEngine() {
           Event-driven decision engine for cluster-based circular path activation
         </p>
       </div>
+
+      {dataSource === "none" && (
+        <Card className="border-border/50 border-dashed">
+          <CardContent className="py-6 text-sm text-muted-foreground">
+            No live data available. Connect Supabase and seed records to view decision analytics.
+          </CardContent>
+        </Card>
+      )}
 
       {/* Active Triggers */}
       <Card className="border-border/50">
@@ -121,7 +195,7 @@ export default function DecisionEngine() {
             })}
             {filteredTriggers.length === 0 && (
               <div className="p-6 rounded-lg bg-secondary/20 border border-border/30 text-center text-sm text-muted-foreground">
-                No triggers found for the selected status.
+                No trigger records match the selected status.
               </div>
             )}
           </div>
@@ -159,16 +233,21 @@ export default function DecisionEngine() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {clusterDecisionMatrix.map((rule) => (
-                <div key={rule.cluster} className="p-3 rounded-lg bg-secondary/20 border border-border/20">
+              {decisionMatrix.map((rule) => (
+                <div key={rule.bucket} className="p-3 rounded-lg bg-secondary/20 border border-border/20">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium">{rule.cluster}</span>
+                    <span className="text-xs font-medium">{rule.bucket}</span>
                     <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[9px]">{rule.count} ECUs</Badge>
                       <ArrowRight className="w-3 h-3 text-muted-foreground" />
                       <Badge variant="outline" className="text-[9px]">{rule.priority}</Badge>
                     </div>
                   </div>
                   <p className="text-[10px] text-muted-foreground">{rule.rationale}</p>
+                  <div className="flex items-center gap-3 mt-2 text-[9px] text-muted-foreground">
+                    <span>Avg Risk: <strong className="text-foreground">{rule.avgRisk}</strong></span>
+                    <span>Avg Health: <strong className="text-foreground">{rule.avgHealth}</strong></span>
+                  </div>
                   <div className="flex items-center gap-2 mt-2">
                     <span className="text-[9px] text-muted-foreground">Urgency:</span>
                     <Progress value={rule.urgency} className="h-1 flex-1" />
@@ -176,6 +255,9 @@ export default function DecisionEngine() {
                   </div>
                 </div>
               ))}
+              {decisionMatrix.length === 0 && (
+                <p className="text-xs text-muted-foreground">No ECU risk data in the current live dataset.</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -193,10 +275,10 @@ export default function DecisionEngine() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "ECUs in Pipeline", value: ecuInventory.filter((e) => e.status === "eol" || e.status === "in_recovery").length, unit: "units" },
-              { label: "Recoverable CRM", value: `${Math.round(ecuInventory.filter((e) => e.status !== "active").reduce((s, e) => s + e.crmContentGrams, 0))} g`, unit: "" },
-              { label: "Procurement Reduction", value: "12%", unit: "vs baseline" },
-              { label: "Active Flows", value: "3", unit: "reverse logistics" },
+              { label: "ECUs in Pipeline", value: ecusInPipeline, unit: "units" },
+              { label: "Recoverable CRM", value: `${Math.round(recoverableCrmGrams)} g`, unit: "available" },
+              { label: "Recoverable Share", value: `${recoverableShare}%`, unit: "of CRM tracked" },
+              { label: "Active Flows", value: activeFlows, unit: "circular paths" },
             ].map((item) => (
               <div key={item.label} className="p-3 rounded-lg bg-secondary/30 text-center">
                 <p className="text-[9px] text-muted-foreground uppercase tracking-wider">{item.label}</p>
@@ -208,22 +290,21 @@ export default function DecisionEngine() {
         </CardContent>
       </Card>
 
-      {/* Robotics & Predictive placeholder */}
+      {/* Live operational metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-border/50 border-primary/10">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Cpu className="w-4 h-4 text-primary" />
-              Robotic Disassembly
-              <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/30">Simulation</Badge>
+              Recovery Operations
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Throughput</span><span className="font-mono">42 ECU/day</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Success Rate</span><span className="font-mono text-success">94.2%</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Average Time</span><span className="font-mono">18 min/ECU</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Active Stations</span><span className="font-mono">3/4</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Avg Recovery Rate</span><span className="font-mono">{avgRecoveryRate}%</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Recovered Units</span><span className="font-mono text-success">{ecuInventory.filter((e) => e.status === "recovered").length}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">In-Recovery Units</span><span className="font-mono">{ecuInventory.filter((e) => e.status === "in_recovery").length}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Pending Path Units</span><span className="font-mono">{ecuInventory.filter((e) => e.circularPath === "pending").length}</span></div>
             </div>
           </CardContent>
         </Card>
@@ -231,16 +312,15 @@ export default function DecisionEngine() {
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" />
-              Predictive Analytics
-              <Badge variant="outline" className="text-[9px] bg-primary/10 text-primary border-primary/30">Simulation</Badge>
+              Fleet Health Snapshot
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Incoming ECUs (Q2)</span><span className="font-mono">~320 units</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Expected Cobalt</span><span className="font-mono">4.2 kg</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Flow Stability</span><span className="font-mono text-accent">72%</span></div>
-              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Model Accuracy</span><span className="font-mono text-success">89%</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Avg Remaining Life (active)</span><span className="font-mono">{avgRemainingLife} months</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Maintenance Units</span><span className="font-mono">{maintenanceUnits}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">High Risk Units</span><span className="font-mono text-accent">{highRiskUnits}</span></div>
+              <div className="flex justify-between text-xs"><span className="text-muted-foreground">Total Tracked ECUs</span><span className="font-mono text-success">{ecuInventory.length}</span></div>
             </div>
           </CardContent>
         </Card>

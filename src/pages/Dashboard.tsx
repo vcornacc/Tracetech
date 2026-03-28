@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Shield,
   AlertTriangle,
-  TrendingUp,
   Recycle,
   Globe,
   Database,
@@ -29,7 +28,7 @@ import {
   PolarRadiusAxis,
 } from "recharts";
 
-import { criticalMaterials as fallbackMaterials, clusterInfo } from "@/data/materialsData";
+import { clusterInfo } from "@/data/materialsData";
 import { useData } from "@/hooks/useData";
 import { downloadDashboardCSV, downloadDashboardReport } from "@/lib/reportDownloads";
 import { DataPageSkeleton } from "@/components/DataPageSkeleton";
@@ -53,11 +52,36 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function Dashboard() {
-  const { materials: criticalMaterials, materialsLoading } = useData();
+  const { materials: criticalMaterials, circularTriggers, materialsLoading, triggersLoading, dataSource } = useData();
 
   if (materialsLoading) {
     return <DataPageSkeleton cards={4} rows={8} />;
   }
+
+  const avgRecoveryRate = criticalMaterials.length > 0
+    ? Math.round(criticalMaterials.reduce((sum, m) => sum + m.recycleRate, 0) / criticalMaterials.length)
+    : 0;
+  const avgGeopoliticalRisk = criticalMaterials.length > 0
+    ? Math.round(
+        criticalMaterials.reduce(
+          (sum, m) =>
+            sum + (m.riskProfile.find((risk) => risk.subject === "Geopolitical")?.value ?? 0),
+          0
+        ) / criticalMaterials.length
+      )
+    : 0;
+
+  const recentAlerts = circularTriggers.slice(0, 4).map((trigger) => ({
+    level:
+      trigger.severity === "critical" || trigger.severity === "high"
+        ? "critical"
+        : trigger.severity === "medium"
+        ? "warning"
+        : "info",
+    msg: trigger.label,
+    description: trigger.description,
+    time: new Date(trigger.timestamp).toLocaleDateString("en-US"),
+  }));
 
   const matrixData = criticalMaterials.map((m) => ({
     name: m.name,
@@ -91,6 +115,14 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {dataSource === "none" && (
+        <Card className="border-border/50 border-dashed">
+          <CardContent className="py-6 text-sm text-muted-foreground">
+            No live data available. Connect Supabase and seed records to view dashboard analytics.
+          </CardContent>
+        </Card>
+      )}
+
       {/* KPI Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
@@ -107,19 +139,17 @@ export default function Dashboard() {
           subtitle="Yale ≥ 60 + EU Critical"
           icon={<AlertTriangle className="w-5 h-5" />}
           variant="critical"
-          trend={{ value: -8, label: "vs Q3" }}
         />
         <MetricCard
           title="Recovery Rate"
-          value="23%"
-          subtitle="circular average"
+          value={`${avgRecoveryRate}%`}
+          subtitle="live average"
           icon={<Recycle className="w-5 h-5" />}
           variant="success"
-          trend={{ value: 5, label: "vs Q3" }}
         />
         <MetricCard
           title="Geopolitical Risk"
-          value="72/100"
+          value={`${avgGeopoliticalRisk}/100`}
           subtitle="concentration index"
           icon={<Globe className="w-5 h-5" />}
           variant="amber"
@@ -251,12 +281,10 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {[
-                { level: "critical", msg: "Cobalt: Yale Score exceeded threshold 80 — Systemic Dual cluster", time: "2h ago" },
-                { level: "warning", msg: "Lithium: HHI rising (+12%) — concentration in Australia/Chile", time: "5h ago" },
-                { level: "info", msg: "Rare Earths: new qualified supplier reduces HHI by 4%", time: "1d ago" },
-                { level: "warning", msg: "Platinum: price volatility +18% in last quarter", time: "2d ago" },
-              ].map((alert, i) => (
+              {!triggersLoading && recentAlerts.length === 0 && (
+                <p className="text-xs text-muted-foreground">No alerts in the current live dataset.</p>
+              )}
+              {recentAlerts.map((alert, i) => (
                 <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30">
                   <div
                     className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${
@@ -269,6 +297,7 @@ export default function Dashboard() {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs leading-relaxed">{alert.msg}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{alert.description}</p>
                     <p className="text-[10px] text-muted-foreground mt-1">{alert.time}</p>
                   </div>
                 </div>

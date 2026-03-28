@@ -130,7 +130,7 @@ function MaterialCard({ material }: { material: CriticalMaterial }) {
 }
 
 export default function Materials() {
-  const { materials: criticalMaterials, materialsLoading } = useData();
+  const { materials: criticalMaterials, materialsLoading, dataSource } = useData();
   const [search, setSearch] = useState("");
   const [clusterFilter, setClusterFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("yaleScore");
@@ -161,6 +161,14 @@ export default function Materials() {
           Risk profile for {criticalMaterials.length} critical materials tracked in the system
         </p>
       </div>
+
+      {dataSource === "none" && (
+        <Card className="border-border/50 border-dashed">
+          <CardContent className="py-6 text-sm text-muted-foreground">
+            No live data available. Connect Supabase and seed records to view material analytics.
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
@@ -222,8 +230,8 @@ export default function Materials() {
         <Card className="border-border/50">
           <CardContent className="py-12 text-center">
             <Database className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-            <p className="text-sm text-muted-foreground">No materials found</p>
-            <p className="text-xs text-muted-foreground mt-1">Try changing search terms or filters.</p>
+            <p className="text-sm text-muted-foreground">No material records match the current filters.</p>
+            <p className="text-xs text-muted-foreground mt-1">Adjust search or filters, or sync additional live records in Supabase.</p>
           </CardContent>
         </Card>
       )}

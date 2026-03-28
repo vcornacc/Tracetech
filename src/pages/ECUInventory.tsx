@@ -36,7 +36,7 @@ const pathConfig: Record<ECU["circularPath"], { label: string; class: string }> 
 
 export default function ECUInventory() {
   const navigate = useNavigate();
-  const { ecuInventory, ecusLoading } = useData();
+  const { ecuInventory, ecusLoading, dataSource } = useData();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [pathFilter, setPathFilter] = useState("all");
@@ -65,9 +65,17 @@ export default function ECUInventory() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">ECU Inventory</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Digital Product Passport — {ecuInventory.length} units tracked in the system
+          Digital Product Passport — {ecuInventory.length} units tracked in the live dataset
         </p>
       </div>
+
+      {dataSource === "none" && (
+        <Card className="border-border/50 border-dashed">
+          <CardContent className="py-6 text-sm text-muted-foreground">
+            No live data available. Connect Supabase and seed records to view ECU inventory.
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Active ECUs" value={activeCount} subtitle="in service" icon={<Cpu className="w-5 h-5" />} variant="cyan" />
@@ -125,7 +133,7 @@ export default function ECUInventory() {
               {filtered.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={10} className="py-10 text-center text-sm text-muted-foreground">
-                    No ECUs found for current filters.
+                    No ECU records match the current filters.
                   </TableCell>
                 </TableRow>
               )}

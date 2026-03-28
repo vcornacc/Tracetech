@@ -41,87 +41,6 @@ const clusterBadgeVariant: Record<string, string> = {
   operational: "bg-[hsl(160,70%,45%)]/15 text-[hsl(160,70%,55%)] border-[hsl(160,70%,45%)]/30",
 };
 
-// Demo supplier data per material
-const suppliersData: Record<string, { name: string; country: string; share: number; risk: "low" | "medium" | "high" }[]> = {
-  Cobalt: [
-    { name: "Glencore", country: "Congo (DRC)", share: 35, risk: "high" },
-    { name: "Umicore", country: "Belgium", share: 25, risk: "low" },
-    { name: "Norilsk Nickel", country: "Russia", share: 20, risk: "high" },
-    { name: "BHP", country: "Australia", share: 20, risk: "medium" },
-  ],
-  Copper: [
-    { name: "Codelco", country: "Chile", share: 30, risk: "medium" },
-    { name: "Freeport-McMoRan", country: "USA", share: 25, risk: "low" },
-    { name: "BHP", country: "Australia", share: 20, risk: "low" },
-    { name: "Jiangxi Copper", country: "China", share: 25, risk: "medium" },
-  ],
-  Palladium: [
-    { name: "Norilsk Nickel", country: "Russia", share: 40, risk: "high" },
-    { name: "Anglo American Platinum", country: "South Africa", share: 30, risk: "medium" },
-    { name: "Impala Platinum", country: "South Africa", share: 20, risk: "medium" },
-    { name: "Vale", country: "Canada", share: 10, risk: "low" },
-  ],
-  Platinum: [
-    { name: "Anglo American Platinum", country: "South Africa", share: 38, risk: "medium" },
-    { name: "Impala Platinum", country: "South Africa", share: 25, risk: "medium" },
-    { name: "Norilsk Nickel", country: "Russia", share: 22, risk: "high" },
-    { name: "Sibanye-Stillwater", country: "South Africa", share: 15, risk: "medium" },
-  ],
-  Tin: [
-    { name: "Yunnan Tin", country: "China", share: 30, risk: "medium" },
-    { name: "PT Timah", country: "Indonesia", share: 25, risk: "medium" },
-    { name: "Minsur", country: "Peru", share: 20, risk: "low" },
-    { name: "Malaysia Smelting Corp", country: "Malaysia", share: 25, risk: "low" },
-  ],
-  Silver: [
-    { name: "Fresnillo", country: "Mexico", share: 28, risk: "medium" },
-    { name: "KGHM", country: "Poland", share: 22, risk: "low" },
-    { name: "Pan American Silver", country: "Canada", share: 25, risk: "low" },
-    { name: "Polymetal", country: "Russia", share: 25, risk: "high" },
-  ],
-  Nickel: [
-    { name: "Vale", country: "Brazil", share: 25, risk: "low" },
-    { name: "Norilsk Nickel", country: "Russia", share: 30, risk: "high" },
-    { name: "PT Aneka Tambang", country: "Indonesia", share: 25, risk: "medium" },
-    { name: "Jinchuan Group", country: "China", share: 20, risk: "medium" },
-  ],
-  Tantalum: [
-    { name: "Global Advanced Metals", country: "Australia", share: 30, risk: "low" },
-    { name: "AMG Advanced Metallurgical", country: "Brazil", share: 25, risk: "low" },
-    { name: "Kemet", country: "USA", share: 20, risk: "low" },
-    { name: "Mining Minerals Resources", country: "Congo (DRC)", share: 25, risk: "high" },
-  ],
-  Tungsten: [
-    { name: "China Minmetals", country: "China", share: 40, risk: "high" },
-    { name: "Wolfram Bergbau", country: "Austria", share: 20, risk: "low" },
-    { name: "Sandvik", country: "Sweden", share: 20, risk: "low" },
-    { name: "Masan Resources", country: "Vietnam", share: 20, risk: "medium" },
-  ],
-  Indium: [
-    { name: "Korea Zinc", country: "South Korea", share: 30, risk: "low" },
-    { name: "Dowa Holdings", country: "Japan", share: 25, risk: "low" },
-    { name: "Teck Resources", country: "Canada", share: 20, risk: "low" },
-    { name: "Zhuzhou Smelter", country: "China", share: 25, risk: "medium" },
-  ],
-  Germanium: [
-    { name: "Yunnan Germanium", country: "China", share: 45, risk: "high" },
-    { name: "Umicore", country: "Belgium", share: 25, risk: "low" },
-    { name: "Teck Resources", country: "Canada", share: 15, risk: "low" },
-    { name: "PPM Pure Metals", country: "Germany", share: 15, risk: "low" },
-  ],
-  Ruthenium: [
-    { name: "Anglo American Platinum", country: "South Africa", share: 40, risk: "medium" },
-    { name: "Norilsk Nickel", country: "Russia", share: 35, risk: "high" },
-    { name: "Impala Platinum", country: "South Africa", share: 25, risk: "medium" },
-  ],
-  Gold: [
-    { name: "Newmont", country: "USA", share: 25, risk: "low" },
-    { name: "Barrick Gold", country: "Canada", share: 25, risk: "low" },
-    { name: "AngloGold Ashanti", country: "South Africa", share: 25, risk: "medium" },
-    { name: "Polyus", country: "Russia", share: 25, risk: "high" },
-  ],
-};
-
 const riskColors = {
   low: "hsl(160, 70%, 45%)",
   medium: "hsl(38, 92%, 55%)",
@@ -138,7 +57,7 @@ function getRiskLevel(value: number) {
 export default function MaterialDetail() {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
-  const { materials: criticalMaterials } = useData();
+  const { materials: criticalMaterials, dataSource } = useData();
 
   const material = criticalMaterials.find(
     (m) => m.name.toLowerCase() === name?.toLowerCase()
@@ -150,7 +69,7 @@ export default function MaterialDetail() {
         <Button variant="ghost" size="sm" onClick={() => navigate("/materials")}>
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to materials
         </Button>
-        <p className="text-muted-foreground">Material not found.</p>
+        <p className="text-muted-foreground">No live material record found for this page.</p>
       </div>
     );
   }
@@ -161,17 +80,35 @@ export default function MaterialDetail() {
   );
   const geoRisk = material.riskProfile.find((r) => r.subject === "Geopolitical")?.value ?? 0;
   const supplyRisk = material.riskProfile.find((r) => r.subject === "Supply Risk")?.value ?? 0;
-  const suppliers = suppliersData[material.name] || [
-    { name: "Generic Supplier 1", country: material.topProducers[0] || "N/A", share: 40, risk: "medium" as const },
-    { name: "Generic Supplier 2", country: material.topProducers[1] || "N/A", share: 35, risk: "low" as const },
-    { name: "Generic Supplier 3", country: material.topProducers[2] || "N/A", share: 25, risk: "low" as const },
-  ];
+  const producers = material.topProducers.length > 0 ? material.topProducers : ["Unknown"];
+  const totalWeight = producers.reduce((sum, _p, i) => sum + (producers.length - i), 0);
+  const suppliers = producers.map((country, i) => {
+    const baseShare = Math.round(((producers.length - i) / totalWeight) * 100);
+    const share = i === producers.length - 1
+      ? 100 - producers.slice(0, i).reduce((sum, _x, idx) => sum + Math.round(((producers.length - idx) / totalWeight) * 100), 0)
+      : baseShare;
+    const risk: "low" | "medium" | "high" = geoRisk >= 70 ? "high" : geoRisk >= 45 ? (i === 0 ? "high" : "medium") : (i === 0 ? "medium" : "low");
+    return {
+      name: `${material.name} supply chain`,
+      country,
+      share,
+      risk,
+    };
+  });
 
   const avgRiskInfo = getRiskLevel(avgRisk);
   const geoRiskInfo = getRiskLevel(geoRisk);
 
   return (
     <div className="space-y-6">
+      {dataSource === "none" && (
+        <Card className="border-border/50 border-dashed">
+          <CardContent className="py-6 text-sm text-muted-foreground">
+            No live data available. Connect Supabase and seed records to view material analytics.
+          </CardContent>
+        </Card>
+      )}
+
       {/* Back + Header */}
       <div className="flex items-start gap-4">
         <Button variant="ghost" size="icon" className="mt-1 shrink-0" onClick={() => navigate("/materials")}>

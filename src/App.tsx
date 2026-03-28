@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { DataProvider } from "@/hooks/useData";
 import { AppLayout } from "@/components/AppLayout";
+import { ThemeProvider } from "@/components/theme-provider";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Materials from "./pages/Materials";
@@ -48,32 +49,34 @@ function AuthRoute() {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-        <DataProvider>
-          <Routes>
-            <Route path="/auth" element={<AuthRoute />} />
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/materials" element={<ProtectedRoute><Materials /></ProtectedRoute>} />
-            <Route path="/materials/:name" element={<ProtectedRoute><MaterialDetail /></ProtectedRoute>} />
-            <Route path="/bom" element={<ProtectedRoute><BomRisk /></ProtectedRoute>} />
-            <Route path="/simulation" element={<ProtectedRoute><Simulation /></ProtectedRoute>} />
-            <Route path="/ecu" element={<ProtectedRoute><ECUInventory /></ProtectedRoute>} />
-            <Route path="/ecu/:id" element={<ProtectedRoute><ECUDetail /></ProtectedRoute>} />
-            <Route path="/decision-engine" element={<ProtectedRoute><DecisionEngine /></ProtectedRoute>} />
-            <Route path="/financial" element={<ProtectedRoute><FinancialEngine /></ProtectedRoute>} />
-            <Route path="/executive" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
-            <Route path="/haas" element={<ProtectedRoute><HaaSReadiness /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </DataProvider>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+          <DataProvider>
+            <Routes>
+              <Route path="/auth" element={<AuthRoute />} />
+              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/materials" element={<ProtectedRoute><Materials /></ProtectedRoute>} />
+              <Route path="/materials/:name" element={<ProtectedRoute><MaterialDetail /></ProtectedRoute>} />
+              <Route path="/bom" element={<ProtectedRoute><BomRisk /></ProtectedRoute>} />
+              <Route path="/simulation" element={<ProtectedRoute><Simulation /></ProtectedRoute>} />
+              <Route path="/ecu" element={<ProtectedRoute><ECUInventory /></ProtectedRoute>} />
+              <Route path="/ecu/:id" element={<ProtectedRoute><ECUDetail /></ProtectedRoute>} />
+              <Route path="/decision-engine" element={<ProtectedRoute><DecisionEngine /></ProtectedRoute>} />
+              <Route path="/financial" element={<ProtectedRoute><FinancialEngine /></ProtectedRoute>} />
+              <Route path="/executive" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
+              <Route path="/haas" element={<ProtectedRoute><HaaSReadiness /></ProtectedRoute>} />
+              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </DataProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
