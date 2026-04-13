@@ -28,6 +28,8 @@ Open in browser:
 - `npm run build`: production build
 - `npm run preview`: preview production build locally
 - `npm run test`: run tests
+- `npm run release:ready`: one-command preflight (install, test, build)
+- `npm run release:publish`: run preflight then push `main` to trigger Pages deploy
 
 ## Deploy With URL (Professional Setup)
 
