@@ -3,11 +3,9 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { DataProvider } from "@/hooks/useData";
 import { AppLayout } from "@/components/AppLayout";
 import { ThemeProvider } from "@/components/theme-provider";
-import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Materials from "./pages/Materials";
 import MaterialDetail from "./pages/MaterialDetail";
@@ -23,28 +21,11 @@ import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
-const DEV_BYPASS_AUTH = import.meta.env.DEV && import.meta.env.VITE_BYPASS_AUTH === "true";
+const AUTH_DISABLED = true;
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (DEV_BYPASS_AUTH) return <AppLayout>{children}</AppLayout>;
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-  if (!user) return <Navigate to="/auth" replace />;
+  if (AUTH_DISABLED) return <AppLayout>{children}</AppLayout>;
   return <AppLayout>{children}</AppLayout>;
-}
-
-function AuthRoute() {
-  const { user, loading } = useAuth();
-  if (DEV_BYPASS_AUTH) return <Navigate to="/" replace />;
-  if (loading) return null;
-  if (user) return <Navigate to="/" replace />;
-  return <Auth />;
 }
 
 const App = () => (
@@ -54,10 +35,9 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter basename={import.meta.env.BASE_URL}>
-          <AuthProvider>
           <DataProvider>
             <Routes>
-              <Route path="/auth" element={<AuthRoute />} />
+              <Route path="/auth" element={<Navigate to="/" replace />} />
               <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/materials" element={<ProtectedRoute><Materials /></ProtectedRoute>} />
               <Route path="/materials/:name" element={<ProtectedRoute><MaterialDetail /></ProtectedRoute>} />
@@ -73,7 +53,6 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </DataProvider>
-          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
