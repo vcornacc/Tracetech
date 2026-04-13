@@ -2,8 +2,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function parseEnvFile(filePath) {
   if (!fs.existsSync(filePath)) {
@@ -27,9 +28,9 @@ function parseEnvFile(filePath) {
 
 function loadEnv() {
   const envCandidates = [
-    path.join(root, ".env.local"),
-    path.join(root, ".env"),
     path.join(root, ".env.local.example"),
+    path.join(root, ".env"),
+    path.join(root, ".env.local"),
   ];
 
   const merged = {};
@@ -42,7 +43,11 @@ function loadEnv() {
 
 async function main() {
   const env = loadEnv();
-  const supabaseUrl = env.VITE_SUPABASE_URL;
+  const rawSupabaseUrl = env.VITE_SUPABASE_URL?.trim().replace(/^['\"]|['\"]$/g, "");
+  const projectId = env.VITE_SUPABASE_PROJECT_ID?.trim().replace(/^['\"]|['\"]$/g, "");
+  const supabaseUrl = rawSupabaseUrl
+    ? (rawSupabaseUrl.startsWith("http://") || rawSupabaseUrl.startsWith("https://") ? rawSupabaseUrl : `https://${rawSupabaseUrl}`)
+    : (projectId ? `https://${projectId}.supabase.co` : undefined);
   const supabaseAnonKey = env.VITE_SUPABASE_PUBLISHABLE_KEY;
   const redirectUrl = env.VITE_AUTH_EMAIL_REDIRECT_URL;
 

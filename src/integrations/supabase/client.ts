@@ -2,7 +2,19 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const sanitizeEnvValue = (value?: string) => value?.trim().replace(/^['\"]|['\"]$/g, '');
+
+const rawSupabaseUrl = sanitizeEnvValue(import.meta.env.VITE_SUPABASE_URL as string | undefined);
+const projectId = sanitizeEnvValue(import.meta.env.VITE_SUPABASE_PROJECT_ID as string | undefined);
+
+const normalizeSupabaseUrl = (url?: string) => {
+  if (!url) return undefined;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  return `https://${url}`;
+};
+
+const SUPABASE_URL = normalizeSupabaseUrl(rawSupabaseUrl) ??
+  (projectId ? `https://${projectId}.supabase.co` : undefined);
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const AUTH_PERSISTENCE_PREFERENCE_KEY = 'tracetech.auth.remember-me';
 
@@ -58,7 +70,10 @@ export const getAuthEmailRedirectUrl = () => {
   if (!isBrowser) {
     return undefined;
   }
-  return `${window.location.origin}/auth`;
+
+  const appBase = import.meta.env.BASE_URL || '/';
+  const normalizedBase = appBase.endsWith('/') ? appBase : `${appBase}/`;
+  return new URL(`auth`, `${window.location.origin}${normalizedBase}`).toString();
 };
 
 // Import the supabase client like this:
