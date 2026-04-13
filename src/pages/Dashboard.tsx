@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { MetricCard } from "@/components/MetricCard";
 import { DownloadReportSection } from "@/components/DownloadReportSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import {
   Database,
   BarChart3,
   Activity,
+  TrendingUp,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -33,6 +35,15 @@ import { useData } from "@/hooks/useData";
 import { downloadDashboardCSV, downloadDashboardReport } from "@/lib/reportDownloads";
 import { DataPageSkeleton } from "@/components/DataPageSkeleton";
 
+// New intelligence layer
+import { buildPortfolioSnapshot, normalizeMaterial, normalizeECU } from "@/lib/dataSchema";
+import { generatePredictiveInsights } from "@/lib/predictiveEngine";
+import { AdaptiveDashboardHeader } from "@/components/AdaptiveDashboardHeader";
+import { CommandCenter } from "@/components/CommandCenter";
+import { RiskMomentumPanel } from "@/components/RiskMomentumPanel";
+import { PortfolioForecast } from "@/components/PortfolioForecast";
+import { AnomalyRadar } from "@/components/AnomalyRadar";
+
 const clusterColors: Record<string, string> = Object.fromEntries(
   Object.entries(clusterInfo).map(([k, v]) => [k, v.color])
 );
@@ -52,36 +63,20 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export default function Dashboard() {
-  const { materials: criticalMaterials, circularTriggers, materialsLoading, triggersLoading, dataSource } = useData();
+  const { materials: criticalMaterials, ecuInventory, circularTriggers, materialsLoading, triggersLoading, dataSource } = useData();
+
+  // ── Source of Truth: Normalized data + Predictive Intelligence ──
+  const { snapshot, insights } = useMemo(() => {
+    const snap = buildPortfolioSnapshot(criticalMaterials, ecuInventory, circularTriggers);
+    const normalizedMats = criticalMaterials.map(normalizeMaterial);
+    const normalizedEcus = ecuInventory.map(normalizeECU);
+    const ins = generatePredictiveInsights(normalizedMats, normalizedEcus, snap, circularTriggers);
+    return { snapshot: snap, insights: ins };
+  }, [criticalMaterials, ecuInventory, circularTriggers]);
 
   if (materialsLoading) {
     return <DataPageSkeleton cards={4} rows={8} />;
   }
-
-  const avgRecoveryRate = criticalMaterials.length > 0
-    ? Math.round(criticalMaterials.reduce((sum, m) => sum + m.recycleRate, 0) / criticalMaterials.length)
-    : 0;
-  const avgGeopoliticalRisk = criticalMaterials.length > 0
-    ? Math.round(
-        criticalMaterials.reduce(
-          (sum, m) =>
-            sum + (m.riskProfile.find((risk) => risk.subject === "Geopolitical")?.value ?? 0),
-          0
-        ) / criticalMaterials.length
-      )
-    : 0;
-
-  const recentAlerts = circularTriggers.slice(0, 4).map((trigger) => ({
-    level:
-      trigger.severity === "critical" || trigger.severity === "high"
-        ? "critical"
-        : trigger.severity === "medium"
-        ? "warning"
-        : "info",
-    msg: trigger.label,
-    description: trigger.description,
-    time: new Date(trigger.timestamp).toLocaleDateString("en-US"),
-  }));
 
   const matrixData = criticalMaterials.map((m) => ({
     name: m.name,
@@ -105,15 +100,11 @@ export default function Dashboard() {
         return { subject, A: avg };
       })
     : [];
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard Executive</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Critical raw materials risk overview — real-time monitoring
-        </p>
-      </div>
+      {/* ═══ ADAPTIVE HEADER — context-aware greeting + system pulse ═══ */}
+      <AdaptiveDashboardHeader snapshot={snapshot} insights={insights} />
 
       {dataSource === "none" && (
         <Card className="border-border/50 border-dashed">
@@ -123,43 +114,74 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* KPI Row */}
+      {/* ═══ KPI ROW — now with trend data from predictive engine ═══ */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Tracked Materials"
-          value={criticalMaterials.length}
-          subtitle="from BOM analysis"
+          value={snapshot.totalMaterials}
+          subtitle={`${snapshot.systemicCount} systemic · ${snapshot.productCount} product`}
           icon={<Database className="w-5 h-5" />}
           variant="cyan"
           href="/materials"
         />
         <MetricCard
           title="High Exposure"
-          value={criticalMaterials.filter((m) => m.yaleScore >= 60 && (m.cluster === "systemic" || m.cluster === "product")).length}
-          subtitle="Yale ≥ 60 + EU Critical"
+          value={snapshot.criticalMaterials + snapshot.highRiskMaterials}
+          subtitle={`${snapshot.criticalMaterials} critical · ${snapshot.highRiskMaterials} high risk`}
           icon={<AlertTriangle className="w-5 h-5" />}
           variant="critical"
           href="/bom"
+          trend={insights.thresholdCrossings.length > 0
+            ? { value: insights.thresholdCrossings.length, label: "crossings in 90d" }
+            : undefined
+          }
         />
         <MetricCard
           title="Recovery Rate"
-          value={`${avgRecoveryRate}%`}
-          subtitle="live average"
+          value={`${snapshot.avgRecoveryRate}%`}
+          subtitle={`${snapshot.ecuNeedingAction} ECUs need action`}
           icon={<Recycle className="w-5 h-5" />}
           variant="success"
           href="/ecu"
         />
         <MetricCard
-          title="Geopolitical Risk"
-          value={`${avgGeopoliticalRisk}/100`}
-          subtitle="concentration index"
-          icon={<Globe className="w-5 h-5" />}
+          title="Portfolio Risk"
+          value={`${snapshot.avgCompositeRisk}`}
+          subtitle={`max: ${snapshot.maxCompositeRisk} · ${insights.actions.length} actions`}
+          icon={<TrendingUp className="w-5 h-5" />}
           variant="amber"
           href="/executive"
+          trend={insights.portfolioForecast.trend === "worsening"
+            ? { value: Math.round(snapshot.avgCompositeRisk * 0.08), label: "projected 90d" }
+            : insights.portfolioForecast.trend === "improving"
+            ? { value: -Math.round(snapshot.avgCompositeRisk * 0.05), label: "projected 90d" }
+            : undefined
+          }
         />
       </div>
 
-      {/* Charts Row */}
+      {/* ═══ INTELLIGENCE ROW — Forecast + Command Center ═══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Portfolio Forecast — where are we heading? */}
+        <PortfolioForecast
+          forecast={insights.portfolioForecast}
+          thresholdCrossings={insights.thresholdCrossings.length}
+          anomalyCount={insights.anomalies.filter((a) => a.severity === "critical").length}
+        />
+
+        {/* Command Center — what to do about it */}
+        <div className="lg:col-span-2">
+          <CommandCenter actions={insights.actions} maxVisible={5} />
+        </div>
+      </div>
+
+      {/* ═══ PREDICTIVE ROW — Risk Momentum + Anomalies ═══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <RiskMomentumPanel momentum={insights.momentum} maxVisible={10} />
+        <AnomalyRadar anomalies={insights.anomalies} maxVisible={6} />
+      </div>
+
+      {/* ═══ ANALYTICS ROW — Traditional charts (enhanced) ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Criticality Matrix */}
         <Card className="lg:col-span-2 border-border/50">
@@ -191,7 +213,6 @@ export default function Dashboard() {
                   label={{ value: "Yale Score", angle: -90, position: "insideLeft", fill: "hsl(215, 15%, 55%)", fontSize: 11 }}
                 />
                 <Tooltip content={<CustomTooltip />} />
-                {/* Threshold lines */}
                 <Scatter data={matrixData} fill="hsl(190, 85%, 50%)">
                   {matrixData.map((entry, i) => (
                     <Cell key={i} fill={clusterColors[entry.cluster]} />
@@ -243,7 +264,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      {/* Bottom Row */}
+      {/* ═══ BOTTOM ROW — Cluster + Alerts ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Cluster Distribution */}
         <Card className="border-border/50">
@@ -274,34 +295,50 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        {/* Alert Feed */}
+        {/* Alert Feed — enhanced with severity awareness */}
         <Card className="border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-accent" />
-              Recent Alerts
+              Active Alerts
+              {snapshot.activeTriggers > 0 && (
+                <span className="ml-auto text-[10px] font-mono text-destructive">
+                  {snapshot.activeTriggers} active
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {!triggersLoading && recentAlerts.length === 0 && (
-                <p className="text-xs text-muted-foreground">No alerts in the current live dataset.</p>
+              {!triggersLoading && snapshot.activeAlerts.length === 0 && (
+                <p className="text-xs text-muted-foreground">No active alerts. Portfolio within normal parameters.</p>
               )}
-              {recentAlerts.map((alert, i) => (
-                <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30">
+              {snapshot.activeAlerts.slice(0, 4).map((trigger, i) => (
+                <div key={trigger.id} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30">
                   <div
                     className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${
-                      alert.level === "critical"
+                      trigger.severity === "critical"
+                        ? "bg-destructive animate-pulse"
+                        : trigger.severity === "high"
                         ? "bg-destructive"
-                        : alert.level === "warning"
+                        : trigger.severity === "medium"
                         ? "bg-accent"
                         : "bg-primary"
                     }`}
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs leading-relaxed">{alert.msg}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{alert.description}</p>
-                    <p className="text-[10px] text-muted-foreground mt-1">{alert.time}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs font-medium leading-relaxed">{trigger.label}</p>
+                      <span className={`text-[9px] uppercase font-mono tracking-wider ${
+                        trigger.severity === "critical" ? "text-destructive" : "text-muted-foreground"
+                      }`}>
+                        {trigger.severity}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{trigger.description}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      {trigger.affectedECUs} ECUs · {trigger.affectedMaterials.join(", ")}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -309,6 +346,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </div>
+
       {/* Download Report */}
       <DownloadReportSection
         title="Export Executive Report"
