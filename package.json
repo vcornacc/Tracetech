@@ -14,6 +14,7 @@
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "test": "vitest run",
     "test:watch": "vitest",
+    "auth:check": "node ./scripts/check-auth-email-config.mjs",
     "release:ready": "bash ./scripts/release-ready.sh",
     "release:publish": "bash ./scripts/release-publish.sh"
   },

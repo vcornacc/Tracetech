@@ -4,13 +4,69 @@ import type { Database } from './types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const AUTH_PERSISTENCE_PREFERENCE_KEY = 'tracetech.auth.remember-me';
+
+const isBrowser = typeof window !== 'undefined';
+
+const safeGetStorage = (storageType: 'local' | 'session') => {
+  if (!isBrowser) return null;
+  try {
+    return storageType === 'local' ? window.localStorage : window.sessionStorage;
+  } catch {
+    return null;
+  }
+};
+
+const shouldRememberSession = () => {
+  const storage = safeGetStorage('local');
+  if (!storage) return true;
+  return storage.getItem(AUTH_PERSISTENCE_PREFERENCE_KEY) !== 'false';
+};
+
+const adaptiveAuthStorage = {
+  getItem: (key: string): string | null => {
+    const preferredStorage = shouldRememberSession() ? safeGetStorage('local') : safeGetStorage('session');
+    const fallbackStorage = shouldRememberSession() ? safeGetStorage('session') : safeGetStorage('local');
+    return preferredStorage?.getItem(key) ?? fallbackStorage?.getItem(key) ?? null;
+  },
+  setItem: (key: string, value: string): void => {
+    const preferredStorage = shouldRememberSession() ? safeGetStorage('local') : safeGetStorage('session');
+    const fallbackStorage = shouldRememberSession() ? safeGetStorage('session') : safeGetStorage('local');
+    preferredStorage?.setItem(key, value);
+    fallbackStorage?.removeItem(key);
+  },
+  removeItem: (key: string): void => {
+    safeGetStorage('local')?.removeItem(key);
+    safeGetStorage('session')?.removeItem(key);
+  },
+};
+
+export const authSessionPreferences = {
+  getRememberMe: () => shouldRememberSession(),
+  setRememberMe: (rememberMe: boolean) => {
+    const storage = safeGetStorage('local');
+    if (!storage) return;
+    storage.setItem(AUTH_PERSISTENCE_PREFERENCE_KEY, rememberMe ? 'true' : 'false');
+  },
+};
+
+export const getAuthEmailRedirectUrl = () => {
+  const envRedirect = import.meta.env.VITE_AUTH_EMAIL_REDIRECT_URL as string | undefined;
+  if (envRedirect && envRedirect.trim().length > 0) {
+    return envRedirect;
+  }
+  if (!isBrowser) {
+    return undefined;
+  }
+  return `${window.location.origin}/auth`;
+};
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    storage: localStorage,
+    storage: adaptiveAuthStorage,
     persistSession: true,
     autoRefreshToken: true,
   }

@@ -17,6 +17,12 @@ npm install
 npm run dev:tracetech
 ```
 
+Set your local auth environment first (copy values from Supabase project settings):
+
+```sh
+cp .env.local.example .env.local
+```
+
 Open in browser:
 
 - `http://127.0.0.1:5173/`
@@ -28,8 +34,16 @@ Open in browser:
 - `npm run build`: production build
 - `npm run preview`: preview production build locally
 - `npm run test`: run tests
+- `npm run auth:check`: validate Supabase auth settings reachability and email setup checklist
 - `npm run release:ready`: one-command preflight (install, test, build)
 - `npm run release:publish`: run preflight then push `main` to trigger Pages deploy
+
+## Auth and Email Verification
+
+- Registration requires email verification.
+- The app sends signup and resend-verification emails using Supabase Auth.
+- Set `VITE_AUTH_EMAIL_REDIRECT_URL` to a URL allowed in Supabase Auth URL configuration.
+- Run `npm run auth:check` to verify auth settings endpoint connectivity and get a production SMTP checklist.
 
 ## Deploy With URL (Professional Setup)
 

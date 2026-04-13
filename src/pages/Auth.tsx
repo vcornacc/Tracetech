@@ -1,23 +1,114 @@
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { FormEvent, useMemo, useState } from "react";
+import { authSessionPreferences, getAuthEmailRedirectUrl, supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowRight, Loader2, Hexagon, Shield, BarChart3, Recycle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+type AuthMode = "signin" | "signup";
+
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [mode, setMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [rememberMe, setRememberMe] = useState(authSessionPreferences.getRememberMe());
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState<string | null>(null);
+  const [fieldTouched, setFieldTouched] = useState<Record<string, boolean>>({});
+  const [formError, setFormError] = useState<string | null>(null);
+  const [showInlineResendForSignin, setShowInlineResendForSignin] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const isLogin = mode === "signin";
+
+  const fieldErrors = useMemo(() => {
+    const errors: Record<string, string> = {};
+
+    if (!email.trim()) {
+      errors.email = "Email is required.";
+    } else if (!emailRegex.test(email)) {
+      errors.email = "Enter a valid email address.";
+    }
+
+    if (!password) {
+      errors.password = "Password is required.";
+    } else if (password.length < 8) {
+      errors.password = "Password must be at least 8 characters.";
+    }
+
+    if (!isLogin) {
+      if (!fullName.trim()) {
+        errors.fullName = "Full name is required.";
+      } else if (fullName.trim().length < 2) {
+        errors.fullName = "Full name must be at least 2 characters.";
+      }
+    }
+
+    return errors;
+  }, [email, password, fullName, isLogin]);
+
+  const canSubmit = Object.keys(fieldErrors).length === 0;
+
+  const switchMode = (nextMode: AuthMode) => {
+    setMode(nextMode);
+    setFormError(null);
+    setShowInlineResendForSignin(false);
+    setPendingVerificationEmail(null);
+    setFieldTouched({});
+  };
+
+  const handleResendVerification = async () => {
+    const destinationEmail = pendingVerificationEmail ?? email;
+    if (!destinationEmail) return;
+
+    setResendingEmail(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email: destinationEmail,
+      options: {
+        emailRedirectTo: getAuthEmailRedirectUrl(),
+      },
+    });
+    setResendingEmail(false);
+
+    if (error) {
+      toast({ title: "Unable to resend email", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    toast({
+      title: "Verification email sent",
+      description: `We sent a new verification email to ${destinationEmail}.`,
+    });
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    setFieldTouched({ fullName: true, email: true, password: true });
+    setFormError(null);
+    setShowInlineResendForSignin(false);
+    if (!canSubmit) return;
+
     setLoading(true);
 
     if (isLogin) {
+      authSessionPreferences.setRememberMe(rememberMe);
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
+        const hasUnconfirmedEmail = error.message.toLowerCase().includes("email not confirmed");
+        const authMessage = hasUnconfirmedEmail
+          ? "Your account is not verified yet. Check your inbox and confirm your email before signing in."
+          : error.message;
+        if (hasUnconfirmedEmail) {
+          setShowInlineResendForSignin(true);
+        }
+        setFormError(authMessage);
         toast({ title: "Sign-in error", description: error.message, variant: "destructive" });
       }
     } else {
@@ -25,14 +116,19 @@ export default function Auth() {
         email,
         password,
         options: {
-          data: { full_name: fullName },
-          emailRedirectTo: window.location.origin,
+          data: { full_name: fullName.trim() },
+          emailRedirectTo: getAuthEmailRedirectUrl(),
         },
       });
       if (error) {
+        setFormError(error.message);
         toast({ title: "Registration error", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "Registration complete", description: "Check your email to confirm your account." });
+        setPendingVerificationEmail(email);
+        toast({
+          title: "Registration complete",
+          description: "A confirmation email has been sent. Verify your account to complete sign up.",
+        });
       }
     }
     setLoading(false);
@@ -92,58 +188,166 @@ export default function Auth() {
           </div>
 
           <div>
+            <div className="rounded-lg border border-border/70 p-1 mb-4 grid grid-cols-2 gap-1 bg-secondary/30">
+              <button
+                type="button"
+                onClick={() => switchMode("signin")}
+                className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  isLogin ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+                aria-pressed={isLogin}
+              >
+                Sign in
+              </button>
+              <button
+                type="button"
+                onClick={() => switchMode("signup")}
+                className={`rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                  !isLogin ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+                aria-pressed={!isLogin}
+              >
+                Sign up
+              </button>
+            </div>
+
             <h2 className="text-2xl font-bold">{isLogin ? "Sign in" : "Create account"}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              {isLogin ? "Enter your credentials to access the platform" : "Register to get started"}
+              {isLogin ? "Enter your credentials to access the platform" : "Create your account and verify your email"}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {!isLogin && (
-              <input
-                placeholder="Full name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required={!isLogin}
-                className="w-full px-4 py-3 rounded-lg bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-colors text-sm"
-              />
-            )}
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 rounded-lg bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-colors text-sm"
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              className="w-full px-4 py-3 rounded-lg bg-secondary/50 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/60 transition-colors text-sm"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-50 text-sm"
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
-              {isLogin ? "Sign in" : "Register"}
-            </button>
-          </form>
+          {pendingVerificationEmail && !isLogin ? (
+            <div className="space-y-5 rounded-xl border border-primary/30 bg-primary/5 p-5">
+              <div>
+                <h3 className="font-semibold text-base">Verify your email</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  We sent a confirmation link to <span className="text-foreground font-medium">{pendingVerificationEmail}</span>.
+                  Open the email and verify your account, then return here to sign in.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendingEmail}
+                className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-50 text-sm"
+              >
+                {resendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+                Resend verification email
+              </button>
+              <button
+                type="button"
+                onClick={() => switchMode("signin")}
+                className="w-full py-2.5 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Back to sign in
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full name</Label>
+                  <Input
+                    id="fullName"
+                    placeholder="Jane Doe"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    onBlur={() => setFieldTouched((prev) => ({ ...prev, fullName: true }))}
+                    autoComplete="name"
+                    required
+                    aria-invalid={Boolean(fieldTouched.fullName && fieldErrors.fullName)}
+                    aria-describedby={fieldTouched.fullName && fieldErrors.fullName ? "fullName-error" : undefined}
+                    className="h-11 bg-secondary/50"
+                  />
+                  {fieldTouched.fullName && fieldErrors.fullName && (
+                    <p id="fullName-error" className="text-xs text-destructive" role="alert">{fieldErrors.fullName}</p>
+                  )}
+                </div>
+              )}
 
-          <div className="text-center">
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {isLogin ? "Don't have an account? Register" : "Already have an account? Sign in"}
-            </button>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onBlur={() => setFieldTouched((prev) => ({ ...prev, email: true }))}
+                  autoComplete="email"
+                  required
+                  aria-invalid={Boolean(fieldTouched.email && fieldErrors.email)}
+                  aria-describedby={fieldTouched.email && fieldErrors.email ? "email-error" : undefined}
+                  className="h-11 bg-secondary/50"
+                />
+                {fieldTouched.email && fieldErrors.email && (
+                  <p id="email-error" className="text-xs text-destructive" role="alert">{fieldErrors.email}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="At least 8 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onBlur={() => setFieldTouched((prev) => ({ ...prev, password: true }))}
+                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  required
+                  aria-invalid={Boolean(fieldTouched.password && fieldErrors.password)}
+                  aria-describedby={fieldTouched.password && fieldErrors.password ? "password-error" : "password-help"}
+                  className="h-11 bg-secondary/50"
+                />
+                <p id="password-help" className="text-xs text-muted-foreground">
+                  Use a strong password with at least 8 characters.
+                </p>
+                {fieldTouched.password && fieldErrors.password && (
+                  <p id="password-error" className="text-xs text-destructive" role="alert">{fieldErrors.password}</p>
+                )}
+              </div>
+
+              {isLogin && (
+                <div className="flex items-center gap-2 pt-1">
+                  <Checkbox
+                    id="remember-me"
+                    checked={rememberMe}
+                    onCheckedChange={(checked) => setRememberMe(checked === true)}
+                    aria-label="Keep me signed in"
+                  />
+                  <Label htmlFor="remember-me" className="text-sm text-muted-foreground">Keep me signed in</Label>
+                </div>
+              )}
+
+              {formError && (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+                  <p>{formError}</p>
+                  {isLogin && showInlineResendForSignin && emailRegex.test(email) && (
+                    <button
+                      type="button"
+                      onClick={handleResendVerification}
+                      disabled={resendingEmail}
+                      className="mt-2 inline-flex items-center gap-2 text-sm font-medium underline underline-offset-4 hover:no-underline disabled:opacity-60"
+                    >
+                      {resendingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      Resend verification email
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-semibold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors disabled:opacity-50 text-sm"
+              >
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+                {isLogin ? "Sign in" : "Create account"}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>
