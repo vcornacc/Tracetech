@@ -12,10 +12,13 @@ import React, { createContext, useContext, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  criticalMaterials as fallbackMaterials,
   clusterInfo,
   type CriticalMaterial,
 } from "@/data/materialsData";
 import {
+  ecuInventory as fallbackEcuInventory,
+  circularTriggers as fallbackCircularTriggers,
   type ECU,
   type CircularTrigger,
 } from "@/data/ecuData";
@@ -39,10 +42,21 @@ interface DataContextType {
   // Cluster info (static)
   clusterInfo: typeof clusterInfo;
   // Source indicator
-  dataSource: "supabase" | "none";
+  dataSource: "supabase" | "mock" | "none";
 }
 
 const DataContext = createContext<DataContextType | null>(null);
+
+function isMissingSupabaseRelationError(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const code = "code" in error ? String(error.code) : "";
+  const message = "message" in error ? String(error.message) : "";
+
+  return code === "PGRST205" || /schema cache|could not find the table|404/i.test(message);
+}
 
 // ============================================================
 // TRANSFORM SUPABASE → LEGACY INTERFACE
@@ -125,11 +139,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const hasSupabaseMaterials = materialsQuery.data && materialsQuery.data.length > 0;
     const hasSupabaseEcus = ecusQuery.data && ecusQuery.data.length > 0;
     const hasSupabaseTriggers = triggersQuery.data && triggersQuery.data.length > 0;
+    const useFallbackMaterials = isMissingSupabaseRelationError(materialsQuery.error);
+    const useFallbackEcus = isMissingSupabaseRelationError(ecusQuery.error);
+    const useFallbackTriggers = isMissingSupabaseRelationError(triggersQuery.error);
 
     // Materials
     const materialsRaw = materialsQuery.data ?? [];
     const materials = hasSupabaseMaterials
       ? materialsQuery.data!.map(transformMaterial)
+      : useFallbackMaterials
+      ? fallbackMaterials
       : [];
 
     // ECUs - transform Supabase rows to match legacy ECU interface
@@ -169,6 +188,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           _supabaseId: row.id, // keep Supabase UUID for drill-downs
         } as ECU & { _supabaseId: string };
       });
+    } else if (useFallbackEcus) {
+      ecuInventory = fallbackEcuInventory;
     } else {
       ecuInventory = [];
     }
@@ -187,9 +208,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         affectedMaterials: row.affected_materials ?? [],
         status: row.status,
       }));
+    } else if (useFallbackTriggers) {
+      circularTriggersData = fallbackCircularTriggers;
     } else {
       circularTriggersData = [];
     }
+
+    const hasFallbackData = useFallbackMaterials || useFallbackEcus || useFallbackTriggers;
 
     return {
       materials,
@@ -200,7 +225,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       circularTriggers: circularTriggersData,
       triggersLoading: triggersQuery.isLoading,
       clusterInfo,
-      dataSource: hasSupabaseMaterials || hasSupabaseEcus || hasSupabaseTriggers ? "supabase" : "none",
+      dataSource: hasSupabaseMaterials || hasSupabaseEcus || hasSupabaseTriggers
+        ? "supabase"
+        : hasFallbackData
+        ? "mock"
+        : "none",
     };
   }, [materialsQuery.data, materialsQuery.isLoading, ecusQuery.data, ecusQuery.isLoading, triggersQuery.data, triggersQuery.isLoading]);
 

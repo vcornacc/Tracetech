@@ -60,6 +60,7 @@ export default function ECUDetail() {
     .slice(0, 8)
     .map((m) => ({ name: m.name, value: Math.round(m.weightGrams * 1000) / 1000 }));
   const pieColors = ["hsl(190,85%,50%)", "hsl(38,92%,55%)", "hsl(0,72%,55%)", "hsl(160,70%,45%)", "hsl(270,60%,60%)", "hsl(190,85%,70%)", "hsl(38,92%,75%)", "hsl(160,70%,65%)"];
+  const hasMaterialCompositionData = pieData.some((item) => item.value > 0);
 
   // Material value bar chart
   const valueData = ecu.materials
@@ -185,14 +186,18 @@ export default function ECUDetail() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={9}>
-                  {pieData.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: "hsl(222,22%,10%)", border: "1px solid hsl(220,14%,20%)", borderRadius: "8px", fontSize: "11px" }} formatter={(v: number) => `${v} g`} />
-              </PieChart>
-            </ResponsiveContainer>
+            {hasMaterialCompositionData ? (
+              <ResponsiveContainer width="100%" height={280}>
+                <PieChart>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={9}>
+                    {pieData.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: "hsl(222,22%,10%)", border: "1px solid hsl(220,14%,20%)", borderRadius: "8px", fontSize: "11px" }} formatter={(v: number) => `${v} g`} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="py-16 text-center text-sm text-muted-foreground">No material composition data available.</p>
+            )}
           </CardContent>
         </Card>
       </div>

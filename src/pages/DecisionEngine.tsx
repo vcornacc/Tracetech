@@ -46,6 +46,7 @@ export default function DecisionEngine() {
     { name: "Selective Recovery", value: ecuInventory.filter((e) => e.circularPath === "selective_recovery").length, color: "hsl(270,60%,60%)" },
     { name: "Pending", value: ecuInventory.filter((e) => e.circularPath === "pending").length, color: "hsl(215,15%,40%)" },
   ];
+  const hasPathDistributionData = pathDistribution.some((item) => item.value > 0);
 
   const riskBuckets = [
     {
@@ -212,14 +213,18 @@ export default function DecisionEngine() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={pathDistribution} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label={({ name, value }) => `${name}: ${value}`} labelLine={false} fontSize={10}>
-                  {pathDistribution.map((d, i) => <Cell key={i} fill={d.color} />)}
-                </Pie>
-                <Tooltip contentStyle={{ backgroundColor: "hsl(222,22%,10%)", border: "1px solid hsl(220,14%,20%)", borderRadius: "8px", fontSize: "11px" }} />
-              </PieChart>
-            </ResponsiveContainer>
+            {hasPathDistributionData ? (
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie data={pathDistribution} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label={({ name, value }) => `${name}: ${value}`} labelLine={false} fontSize={10}>
+                    {pathDistribution.map((d, i) => <Cell key={i} fill={d.color} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: "hsl(222,22%,10%)", border: "1px solid hsl(220,14%,20%)", borderRadius: "8px", fontSize: "11px" }} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="py-16 text-center text-sm text-muted-foreground">No circular path distribution data available.</p>
+            )}
           </CardContent>
         </Card>
 
