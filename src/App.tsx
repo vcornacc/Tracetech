@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
 import { DataProvider } from "@/hooks/useData";
 import { AppLayout } from "@/components/AppLayout";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -35,24 +36,26 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter basename={import.meta.env.BASE_URL}>
-          <DataProvider>
-            <Routes>
-              <Route path="/auth" element={<Navigate to="/" replace />} />
-              <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-              <Route path="/materials" element={<ProtectedRoute><Materials /></ProtectedRoute>} />
-              <Route path="/materials/:name" element={<ProtectedRoute><MaterialDetail /></ProtectedRoute>} />
-              <Route path="/bom" element={<ProtectedRoute><BomRisk /></ProtectedRoute>} />
-              <Route path="/simulation" element={<ProtectedRoute><Simulation /></ProtectedRoute>} />
-              <Route path="/ecu" element={<ProtectedRoute><ECUInventory /></ProtectedRoute>} />
-              <Route path="/ecu/:id" element={<ProtectedRoute><ECUDetail /></ProtectedRoute>} />
-              <Route path="/decision-engine" element={<ProtectedRoute><DecisionEngine /></ProtectedRoute>} />
-              <Route path="/financial" element={<ProtectedRoute><FinancialEngine /></ProtectedRoute>} />
-              <Route path="/executive" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
-              <Route path="/haas" element={<ProtectedRoute><HaaSReadiness /></ProtectedRoute>} />
-              <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </DataProvider>
+          <AuthProvider>
+            <DataProvider>
+              <Routes>
+                <Route path="/auth" element={<Navigate to="/" replace />} />
+                <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/materials" element={<ProtectedRoute><Materials /></ProtectedRoute>} />
+                <Route path="/materials/:name" element={<ProtectedRoute><MaterialDetail /></ProtectedRoute>} />
+                <Route path="/bom" element={<ProtectedRoute><BomRisk /></ProtectedRoute>} />
+                <Route path="/simulation" element={<ProtectedRoute><Simulation /></ProtectedRoute>} />
+                <Route path="/ecu" element={<ProtectedRoute><ECUInventory /></ProtectedRoute>} />
+                <Route path="/ecu/:id" element={<ProtectedRoute><ECUDetail /></ProtectedRoute>} />
+                <Route path="/decision-engine" element={<ProtectedRoute><DecisionEngine /></ProtectedRoute>} />
+                <Route path="/financial" element={<ProtectedRoute><FinancialEngine /></ProtectedRoute>} />
+                <Route path="/executive" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
+                <Route path="/haas" element={<ProtectedRoute><HaaSReadiness /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </DataProvider>
+          </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </ThemeProvider>
