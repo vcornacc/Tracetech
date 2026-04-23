@@ -18,6 +18,16 @@ export interface CriticalMaterial {
   hhi: number;
   recycleRate: number;
   topProducers: string[];
+  // Material Risk Factor (MRF) extended fields
+  priceVolatility30d?: number;       // % monthly volatility (0-100, LME/Bloomberg)
+  priceVolatility1y?: number;        // % yearly volatility (0-100)
+  productionByCountry?: Array<{ country: string; sharePercent: number }>; // World Mining Data
+  reservesYears?: number;            // Years of reserves at current production (USGS)
+  gprScore?: number;                 // Geopolitical Risk Index 0-100 (GPR)
+  supplyCentralityScore?: number;    // Supply chain centrality 0-100 (internal model)
+  substitutabilityScore?: number;    // Tech substitutability 0-1 (0=easily replaced, 1=not replaceable)
+  esgScore?: number;                 // ESG composite 0-100 (Bloomberg ESG)
+  tradeRestrictionScore?: number;    // Trade barrier risk 0-100 (Bloomberg Trade Monitor)
 }
 
 export const criticalMaterials: CriticalMaterial[] = [
@@ -39,6 +49,20 @@ export const criticalMaterials: CriticalMaterial[] = [
       { subject: "ESG Risk", value: 50 },
       { subject: "HHI Concentration", value: 35 },
     ],
+    priceVolatility30d: 12.5,
+    priceVolatility1y: 18.3,
+    reservesYears: 38,
+    gprScore: 38,
+    supplyCentralityScore: 65,
+    substitutabilityScore: 0.3,
+    esgScore: 55,
+    tradeRestrictionScore: 15,
+    productionByCountry: [
+      { country: "Chile", sharePercent: 28 },
+      { country: "Peru", sharePercent: 11 },
+      { country: "China", sharePercent: 9 },
+      { country: "Others", sharePercent: 52 },
+    ],
   },
   {
     name: "Cobalt",
@@ -57,6 +81,20 @@ export const criticalMaterials: CriticalMaterial[] = [
       { subject: "Recycling Gap", value: 85 },
       { subject: "ESG Risk", value: 90 },
       { subject: "HHI Concentration", value: 88 },
+    ],
+    priceVolatility30d: 22.5,
+    priceVolatility1y: 28.0,
+    reservesYears: 140,
+    gprScore: 85,
+    supplyCentralityScore: 92,
+    substitutabilityScore: 0.88,
+    esgScore: 75,
+    tradeRestrictionScore: 60,
+    productionByCountry: [
+      { country: "Congo (DRC)", sharePercent: 71 },
+      { country: "Russia", sharePercent: 7 },
+      { country: "Australia", sharePercent: 6 },
+      { country: "Others", sharePercent: 16 },
     ],
   },
   {
@@ -153,6 +191,20 @@ export const criticalMaterials: CriticalMaterial[] = [
       { subject: "ESG Risk", value: 65 },
       { subject: "HHI Concentration", value: 92 },
     ],
+    priceVolatility30d: 18.0,
+    priceVolatility1y: 22.0,
+    reservesYears: 110,
+    gprScore: 75,
+    supplyCentralityScore: 88,
+    substitutabilityScore: 0.80,
+    esgScore: 70,
+    tradeRestrictionScore: 70,
+    productionByCountry: [
+      { country: "Russia", sharePercent: 40 },
+      { country: "South Africa", sharePercent: 33 },
+      { country: "Canada", sharePercent: 8 },
+      { country: "Others", sharePercent: 19 },
+    ],
   },
   {
     name: "Platinum",
@@ -190,6 +242,20 @@ export const criticalMaterials: CriticalMaterial[] = [
       { subject: "Recycling Gap", value: 78 },
       { subject: "ESG Risk", value: 85 },
       { subject: "HHI Concentration", value: 72 },
+    ],
+    priceVolatility30d: 25.0,
+    priceVolatility1y: 30.0,
+    reservesYears: 140,
+    gprScore: 80,
+    supplyCentralityScore: 85,
+    substitutabilityScore: 0.85,
+    esgScore: 80,
+    tradeRestrictionScore: 50,
+    productionByCountry: [
+      { country: "Congo (DRC)", sharePercent: 32 },
+      { country: "Rwanda", sharePercent: 15 },
+      { country: "Brazil", sharePercent: 12 },
+      { country: "Others", sharePercent: 41 },
     ],
   },
   {

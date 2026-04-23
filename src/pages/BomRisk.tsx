@@ -4,8 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   FileUp, Upload, FileText, AlertTriangle, CheckCircle2,
-  X, Table as TableIcon, Info,
+  X, Table as TableIcon, Info, Loader2,
 } from "lucide-react";
+import { BOMRiskReport } from "@/components/BOMRiskReport";
+import { parseBOMFromFile } from "@/lib/bomParser";
+import { analyzeBOM } from "@/lib/bomRiskEngine";
+import { useData } from "@/hooks/useData";
+import type { ResilienceRiskReport } from "@/lib/bomRiskEngine";
 
 interface UploadedFile {
   name: string;
@@ -14,12 +19,52 @@ interface UploadedFile {
 }
 
 export default function BomRisk() {
+  const { materials } = useData();
   const [file, setFile] = useState<UploadedFile | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [report, setReport] = useState<ResilienceRiskReport | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (f: File) => {
+  const handleFile = async (f: File) => {
     setFile({ name: f.name, size: f.size });
+    setReport(null);
+    setAnalysisError(null);
+    
+    // Automatically analyze on file select
+    await analyzeFile(f);
+  };
+
+  const analyzeFile = async (f: File) => {
+    setIsAnalyzing(true);
+    setAnalysisError(null);
+    
+    try {
+      // Convert materials to catalog format for matching
+      const catalogMaterials = materials.map(m => ({
+        name: m.name,
+        id: m.id,
+      }));
+
+      // Parse BOM from file
+      const bom = await parseBOMFromFile(f, catalogMaterials);
+
+      if (bom.warnings.length > 0 && bom.matched_count === 0) {
+        setAnalysisError(`Failed to parse BOM: ${bom.warnings[0]}`);
+        setIsAnalyzing(false);
+        return;
+      }
+
+      // Analyze BOM against materials
+      const analysisReport = analyzeBOM(bom, materials);
+      setReport(analysisReport);
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      setAnalysisError(`Analysis error: ${errMsg}`);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -48,6 +93,34 @@ export default function BomRisk() {
     { name: "supplier_country", type: "string", example: "Congo (DRC)", required: false },
     { name: "unit_cost_eur", type: "number", example: "45.00", required: false },
   ];
+
+  // Show report if analysis succeeded
+  if (report && !analysisError) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">BOM Analysis Report</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {file?.name}
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setFile(null);
+              setReport(null);
+              setAnalysisError(null);
+            }}
+          >
+            Upload Different BOM
+          </Button>
+        </div>
+
+        <BOMRiskReport report={report} isLoading={false} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -89,9 +162,16 @@ export default function BomRisk() {
                   accept=".csv,.xlsx,.xls"
                   className="hidden"
                   onChange={handleInputChange}
+                  disabled={isAnalyzing}
                 />
                 <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-                  {file ? (
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="w-10 h-10 text-primary mb-3 animate-spin" />
+                      <p className="text-sm font-semibold">Analysing BOM...</p>
+                      <p className="text-xs text-muted-foreground mt-1">Matching materials and computing risk scores</p>
+                    </>
+                  ) : file ? (
                     <>
                       <CheckCircle2 className="w-10 h-10 text-success mb-3" />
                       <p className="text-sm font-semibold text-success">File ready</p>
@@ -109,6 +189,12 @@ export default function BomRisk() {
                 </div>
               </div>
 
+              {analysisError && (
+                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <p className="text-xs text-destructive"><strong>Error:</strong> {analysisError}</p>
+                </div>
+              )}
+
               {file && (
                 <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30 border border-border/50">
                   <div className="flex items-center gap-3">
@@ -121,15 +207,33 @@ export default function BomRisk() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button size="sm" className="h-7 text-xs">
-                      Analyse BOM
-                    </Button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setFile(null); }}
-                      className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                    {!isAnalyzing && (
+                      <>
+                        <Button 
+                          size="sm" 
+                          className="h-7 text-xs"
+                          onClick={() => {
+                            const fileInput = inputRef.current;
+                            if (fileInput?.files?.[0]) {
+                              analyzeFile(fileInput.files[0]);
+                            }
+                          }}
+                        >
+                          Re-analyze
+                        </Button>
+                        <button
+                          onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setFile(null); 
+                            setReport(null);
+                            setAnalysisError(null);
+                          }}
+                          className="p-1.5 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
@@ -137,7 +241,7 @@ export default function BomRisk() {
           </Card>
 
           {/* Expected output preview (skeleton) */}
-          {!file && (
+          {!file && !report && (
             <Card className="border-border/50">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
@@ -148,7 +252,7 @@ export default function BomRisk() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  {["Risk exposure per material", "Cluster assignment (Systemic / Product / Sectoral / Operational)", "Supply chain concentration (HHI)", "Geopolitical dependency map", "Circular recovery potential (€)"].map((item) => (
+                  {["Risk Score (0-100)", "Resilience Distance", "Critical Materials Count", "Top Risk Drivers", "Scenario Analysis (Optimistic / Base / Pessimistic)", "Per-Material Breakdown", "Recommendations"].map((item) => (
                     <div key={item} className="flex items-center gap-2 p-2 rounded-md bg-secondary/20">
                       <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
                       <span className="text-xs text-muted-foreground">{item}</span>

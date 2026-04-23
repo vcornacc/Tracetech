@@ -14,6 +14,7 @@
 
 import type { CriticalMaterial } from "@/data/materialsData";
 import type { ECU, CircularTrigger } from "@/data/ecuData";
+import { computeMaterialRiskFactor } from "@/lib/materialRiskFactor";
 
 // ============================================================
 // RISK DIMENSION ENUM (replaces fragile string arrays)
@@ -58,6 +59,18 @@ export interface NormalizedMaterial {
   riskTier: "critical" | "high" | "medium" | "low";
   recycleGapSeverity: "severe" | "moderate" | "acceptable";
   geopoliticalExposure: number; // composite of geopolitical + HHI
+  // Material Risk Factor (MRF) extended fields
+  materialRiskFactor: number;  // 0-100 MRF score (10-factor model)
+  resilienceDistance: number;  // distance to resilience threshold (35)
+  priceVolatility30d: number;
+  priceVolatility1y: number;
+  reservesYears: number;
+  gprScore: number;
+  supplyCentralityScore: number;
+  substitutabilityScore: number;
+  esgScore: number;
+  tradeRestrictionScore: number;
+  productionByCountry: Array<{ country: string; sharePercent: number }>;
 }
 
 // ============================================================
@@ -149,6 +162,9 @@ export function normalizeMaterial(m: CriticalMaterial): NormalizedMaterial {
     (riskVector["Geopolitical"] * 0.6 + riskVector["HHI Concentration"] * 0.4) * 10
   ) / 10;
 
+  // Compute Material Risk Factor (MRF) using extended 10-factor model
+  const mrfResult = computeMaterialRiskFactor(m);
+
   return {
     id: m.name.toLowerCase().replace(/\s+/g, "-"),
     name: m.name,
@@ -164,6 +180,18 @@ export function normalizeMaterial(m: CriticalMaterial): NormalizedMaterial {
     riskTier,
     recycleGapSeverity,
     geopoliticalExposure,
+    // MRF extended fields
+    materialRiskFactor: mrfResult.materialRiskFactor,
+    resilienceDistance: mrfResult.resilienceDistance,
+    priceVolatility30d: m.priceVolatility30d ?? 15.0,
+    priceVolatility1y: m.priceVolatility1y ?? 20.0,
+    reservesYears: m.reservesYears ?? 50,
+    gprScore: m.gprScore ?? 50,
+    supplyCentralityScore: m.supplyCentralityScore ?? 50,
+    substitutabilityScore: m.substitutabilityScore ?? 0.5,
+    esgScore: m.esgScore ?? 50,
+    tradeRestrictionScore: m.tradeRestrictionScore ?? 20,
+    productionByCountry: m.productionByCountry ?? [],
   };
 }
 

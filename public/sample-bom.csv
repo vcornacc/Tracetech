@@ -1,0 +1,11 @@
+material_name,cas_number,quantity_grams,component_id,supplier_country,unit_cost_eur
+Cobalt,7440-48-4,0.85,ECU-MDG1-01,Congo (DRC),45.50
+Nickel,7440-02-0,1.20,ECU-MDG1-02,Indonesia,12.30
+Copper,7440-50-8,19.17,ECU-MDG1-03,Chile,2.45
+Tin,7440-31-5,2.08,ECU-MDG1-04,China,15.80
+Tantalum,7440-25-7,0.015,ECU-MDG1-05,Congo (DRC),125.00
+Palladium,2023568,0.000039,ECU-MDG1-06,Russia,850.00
+Silver,7440-22-4,0.149,ECU-MDG1-07,Mexico,0.75
+Platinum,7440-56-4,0.000019,ECU-MDG1-08,South Africa,1200.00
+Tungsten,7440-33-7,0.001,ECU-MDG1-09,China,18.50
+Manganese,7439-96-5,0.006,ECU-MDG1-10,South Africa,3.20
