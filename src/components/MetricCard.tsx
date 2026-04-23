@@ -10,8 +10,48 @@ interface MetricCardProps {
   subtitle?: string;
   icon: ReactNode;
   trend?: { value: number; label: string };
+  sparkline?: number[]; // 5–8 data points, latest last
   variant?: "default" | "cyan" | "amber" | "critical" | "success";
   href?: string;
+}
+
+function Sparkline({ data, variant }: { data: number[]; variant: MetricCardProps["variant"] }) {
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const w = 60;
+  const h = 24;
+  const step = w / (data.length - 1);
+
+  const strokeColor =
+    variant === "critical" ? "hsl(0,72%,60%)" :
+    variant === "amber" ? "hsl(38,92%,55%)" :
+    variant === "success" ? "hsl(142,71%,45%)" :
+    "hsl(190,85%,50%)";
+
+  const points = data
+    .map((v, i) => `${i * step},${h - ((v - min) / range) * h}`)
+    .join(" ");
+
+  return (
+    <svg width={w} height={h} className="opacity-70">
+      <polyline
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        points={points}
+      />
+      {/* highlight last point */}
+      <circle
+        cx={(data.length - 1) * step}
+        cy={h - ((data[data.length - 1] - min) / range) * h}
+        r="2.5"
+        fill={strokeColor}
+      />
+    </svg>
+  );
 }
 
 const variantStyles = {
@@ -38,7 +78,7 @@ const iconColorStyles = {
   success: "text-success",
 };
 
-export function MetricCard({ title, value, subtitle, icon, trend, variant = "default", href }: MetricCardProps) {
+export function MetricCard({ title, value, subtitle, icon, trend, sparkline, variant = "default", href }: MetricCardProps) {
   const navigate = useNavigate();
 
   return (
@@ -60,6 +100,11 @@ export function MetricCard({ title, value, subtitle, icon, trend, variant = "def
               <p className={cn("text-xs font-medium", trend.value >= 0 ? "text-success" : "text-destructive")}>
                 {trend.value >= 0 ? "↑" : "↓"} {Math.abs(trend.value)}% {trend.label}
               </p>
+            )}
+            {sparkline && sparkline.length >= 2 && (
+              <div className="pt-1">
+                <Sparkline data={sparkline} variant={variant} />
+              </div>
             )}
           </div>
           <div className="flex flex-col items-end gap-2">

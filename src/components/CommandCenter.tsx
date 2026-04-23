@@ -12,6 +12,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
   TrendingUp,
@@ -64,7 +65,8 @@ interface CommandCenterProps {
   maxVisible?: number;
 }
 
-export function CommandCenter({ actions, maxVisible = 6 }: CommandCenterProps) {
+export function CommandCenter({ actions, maxVisible = 3 }: CommandCenterProps) {
+  const navigate = useNavigate();
   const visibleActions = actions.slice(0, maxVisible);
   const remaining = actions.length - maxVisible;
 
@@ -160,11 +162,12 @@ export function CommandCenter({ actions, maxVisible = 6 }: CommandCenterProps) {
         })}
 
         {remaining > 0 && (
-          <div className="text-center py-2">
-            <span className="text-[10px] text-muted-foreground">
-              +{remaining} more actions available
-            </span>
-          </div>
+          <button
+            onClick={() => navigate("/decisions")}
+            className="w-full text-center py-2 text-[10px] text-primary hover:text-primary/80 transition-colors font-medium"
+          >
+            +{remaining} more actions → View all in Decision Engine
+          </button>
         )}
       </CardContent>
     </Card>

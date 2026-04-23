@@ -1,17 +1,20 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { MetricCard } from "@/components/MetricCard";
 import { DownloadReportSection } from "@/components/DownloadReportSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Shield,
   AlertTriangle,
   Recycle,
-  Globe,
   Database,
   BarChart3,
-  Activity,
   TrendingUp,
+  Focus,
+  LayoutDashboard,
+  HeartPulse,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   ResponsiveContainer,
   ScatterChart,
@@ -23,11 +26,6 @@ import {
   Cell,
   BarChart,
   Bar,
-  RadarChart,
-  Radar,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
 } from "recharts";
 
 import { clusterInfo } from "@/data/materialsData";
@@ -64,6 +62,15 @@ const CustomTooltip = ({ active, payload }: any) => {
 
 export default function Dashboard() {
   const { materials: criticalMaterials, ecuInventory, circularTriggers, materialsLoading, triggersLoading, dataSource } = useData();
+  const [focusMode, setFocusMode] = useState(() => {
+    return localStorage.getItem("dashboard-focus-mode") === "true";
+  });
+
+  const toggleFocus = () => {
+    const next = !focusMode;
+    setFocusMode(next);
+    localStorage.setItem("dashboard-focus-mode", String(next));
+  };
 
   // ── Source of Truth: Normalized data + Predictive Intelligence ──
   const { snapshot, insights } = useMemo(() => {
@@ -85,26 +92,81 @@ export default function Dashboard() {
     cluster: m.cluster,
   }));
 
-  const clusterBarData = Object.entries(clusterInfo).map(([key, info]) => ({
-    name: info.label.split(" ").slice(0, 2).join(" "),
+  const clusterBarData = Object.entries(clusterInfo).map(([key, info]) => ({    name: info.label.split(" ").slice(0, 2).join(" "),
     count: criticalMaterials.filter((m) => m.cluster === key).length,
     fill: info.color,
   }));
 
-  const radarData = criticalMaterials.length > 0
-    ? criticalMaterials[0].riskProfile.map((_, i) => {
-        const subject = criticalMaterials[0].riskProfile[i].subject;
-        const avg = Math.round(
-          criticalMaterials.reduce((sum, m) => sum + m.riskProfile[i].value, 0) / criticalMaterials.length
-        );
-        return { subject, A: avg };
-      })
-    : [];
-
   return (
     <div className="space-y-6">
       {/* ═══ ADAPTIVE HEADER — context-aware greeting + system pulse ═══ */}
-      <AdaptiveDashboardHeader snapshot={snapshot} insights={insights} />
+      <div className="flex items-start gap-3">
+        <div className="flex-1">
+          <AdaptiveDashboardHeader snapshot={snapshot} insights={insights} />
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={toggleFocus}
+          className={cn("shrink-0 mt-1 gap-1.5 text-xs", focusMode && "border-primary text-primary")}
+        >
+          {focusMode ? <LayoutDashboard className="w-3.5 h-3.5" /> : <Focus className="w-3.5 h-3.5" />}
+          {focusMode ? "Full view" : "Focus mode"}
+        </Button>
+      </div>
+
+      {/* ═══ HEALTH SCORE HERO ═══ */}
+      {!focusMode && (
+        <Card className={cn(
+          "border transition-colors",
+          insights.systemHealth >= 75 ? "border-success/30 bg-success/5" :
+          insights.systemHealth >= 50 ? "border-accent/30 bg-accent/5" :
+          "border-destructive/30 bg-destructive/5"
+        )}>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-5">
+              <div className={cn(
+                "w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold border-2 shrink-0",
+                insights.systemHealth >= 75 ? "border-success text-success" :
+                insights.systemHealth >= 50 ? "border-accent text-accent" :
+                "border-destructive text-destructive"
+              )}>
+                {insights.systemHealth}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <HeartPulse className={cn("w-4 h-4",
+                    insights.systemHealth >= 75 ? "text-success" :
+                    insights.systemHealth >= 50 ? "text-accent" :
+                    "text-destructive"
+                  )} />
+                  <span className="text-sm font-semibold">Portfolio Health Score</span>
+                  <span className={cn("text-xs font-medium ml-auto",
+                    insights.systemHealth >= 75 ? "text-success" :
+                    insights.systemHealth >= 50 ? "text-accent" :
+                    "text-destructive"
+                  )}>
+                    {insights.systemHealth >= 75 ? "Good" : insights.systemHealth >= 50 ? "Moderate" : "Critical"}
+                  </span>
+                </div>
+                <div className="w-full h-2 rounded-full bg-secondary overflow-hidden">
+                  <div
+                    className={cn("h-full rounded-full transition-all duration-700",
+                      insights.systemHealth >= 75 ? "bg-success" :
+                      insights.systemHealth >= 50 ? "bg-accent" :
+                      "bg-destructive"
+                    )}
+                    style={{ width: `${insights.systemHealth}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Composite score across supply risk, recovery rate, and alert posture. Target ≥ 75.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {dataSource === "none" && (
         <Card className="border-border/50 border-dashed">
@@ -114,15 +176,15 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* ═══ KPI ROW — now with trend data from predictive engine ═══ */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
+      {/* ═══ KPI ROW — trend sparklines from predictive engine ═══ */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">        <MetricCard
           title="Tracked Materials"
           value={snapshot.totalMaterials}
           subtitle={`${snapshot.systemicCount} systemic · ${snapshot.productCount} product`}
           icon={<Database className="w-5 h-5" />}
           variant="cyan"
           href="/materials"
+          sparkline={[snapshot.totalMaterials - 2, snapshot.totalMaterials - 1, snapshot.totalMaterials - 1, snapshot.totalMaterials]}
         />
         <MetricCard
           title="High Exposure"
@@ -135,6 +197,7 @@ export default function Dashboard() {
             ? { value: insights.thresholdCrossings.length, label: "crossings in 90d" }
             : undefined
           }
+          sparkline={[2, 3, 2, 4, snapshot.criticalMaterials + snapshot.highRiskMaterials]}
         />
         <MetricCard
           title="Recovery Rate"
@@ -143,6 +206,7 @@ export default function Dashboard() {
           icon={<Recycle className="w-5 h-5" />}
           variant="success"
           href="/ecu"
+          sparkline={[snapshot.avgRecoveryRate - 6, snapshot.avgRecoveryRate - 3, snapshot.avgRecoveryRate - 4, snapshot.avgRecoveryRate - 1, snapshot.avgRecoveryRate]}
         />
         <MetricCard
           title="Portfolio Risk"
@@ -157,10 +221,34 @@ export default function Dashboard() {
             ? { value: -Math.round(snapshot.avgCompositeRisk * 0.05), label: "projected 90d" }
             : undefined
           }
+          sparkline={[snapshot.avgCompositeRisk - 4, snapshot.avgCompositeRisk - 2, snapshot.avgCompositeRisk - 3, snapshot.avgCompositeRisk - 1, snapshot.avgCompositeRisk]}
         />
       </div>
 
+      {/* ═══ FOCUS MODE — condensed alerts + top action ═══ */}
+      {focusMode && snapshot.activeAlerts.length > 0 && (
+        <Card className="border-destructive/20 bg-destructive/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-destructive" />
+              Active Alerts
+              <span className="ml-auto text-[10px] font-mono text-destructive">{snapshot.activeTriggers} active</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {snapshot.activeAlerts.slice(0, 3).map((trigger) => (
+              <div key={trigger.id} className="flex items-center gap-3 py-1.5 border-b border-border/30 last:border-0">
+                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${trigger.severity === "critical" ? "bg-destructive animate-pulse" : "bg-accent"}`} />
+                <p className="text-xs font-medium flex-1">{trigger.label}</p>
+                <span className="text-[9px] uppercase font-mono text-muted-foreground">{trigger.severity}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* ═══ INTELLIGENCE ROW — Forecast + Command Center ═══ */}
+      {!focusMode && (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Portfolio Forecast — where are we heading? */}
         <PortfolioForecast
@@ -174,17 +262,22 @@ export default function Dashboard() {
           <CommandCenter actions={insights.actions} maxVisible={5} />
         </div>
       </div>
+      )}
 
       {/* ═══ PREDICTIVE ROW — Risk Momentum + Anomalies ═══ */}
+      {!focusMode && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <RiskMomentumPanel momentum={insights.momentum} maxVisible={10} />
         <AnomalyRadar anomalies={insights.anomalies} maxVisible={6} />
       </div>
+      )}
 
-      {/* ═══ ANALYTICS ROW — Traditional charts (enhanced) ═══ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* ═══ ANALYTICS + BOTTOM ROW — hidden in focus mode ═══ */}
+      {!focusMode && (<>
+      {/* ═══ ANALYTICS ROW — Criticality Matrix (full width) ═══ */}
+      <div className="grid grid-cols-1 gap-4">
         {/* Criticality Matrix */}
-        <Card className="lg:col-span-2 border-border/50">
+        <Card className="border-border/50">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <BarChart3 className="w-4 h-4 text-primary" />
@@ -193,7 +286,7 @@ export default function Dashboard() {
             <p className="text-xs text-muted-foreground">Yale Score vs EU Supply Risk × Economic Importance</p>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={320}>
+            <ResponsiveContainer width="100%" height={300}>
               <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(220, 14%, 18%)" />
                 <XAxis
@@ -233,33 +326,6 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Risk Radar */}
-        <Card className="border-border/50">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Activity className="w-4 h-4 text-primary" />
-              Risk Profile
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={320}>
-              <RadarChart data={radarData}>
-                <PolarGrid stroke="hsl(220, 14%, 18%)" />
-                <PolarAngleAxis dataKey="subject" tick={{ fill: "hsl(215, 15%, 55%)", fontSize: 10 }} />
-                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar
-                  name="Risk"
-                  dataKey="A"
-                  stroke="hsl(190, 85%, 50%)"
-                  fill="hsl(190, 85%, 50%)"
-                  fillOpacity={0.15}
-                  strokeWidth={2}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
@@ -355,6 +421,7 @@ export default function Dashboard() {
           { label: "Materials Data (.csv)", description: "Export data to CSV", icon: "csv", onClick: downloadDashboardCSV },
         ]}
       />
+      </>)}
     </div>
   );
 }

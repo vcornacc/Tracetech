@@ -20,7 +20,6 @@ import { SystemPulse } from "@/components/SystemPulse";
 import { Badge } from "@/components/ui/badge";
 import {
   Sun,
-  Cloud,
   Moon,
   Coffee,
   Zap,
@@ -111,7 +110,7 @@ export function AdaptiveDashboardHeader({ snapshot, insights }: AdaptiveDashboar
             {postureMsg.subtitle}
           </p>
 
-          {/* Quick stats */}
+          {/* Urgency badge only — stats live in KPI cards below */}
           <div className="flex items-center gap-3 pt-1">
             <Badge
               variant={isCritical ? "destructive" : "outline"}
@@ -120,14 +119,6 @@ export function AdaptiveDashboardHeader({ snapshot, insights }: AdaptiveDashboar
               {isCritical && <Zap className="w-3 h-3 mr-1" />}
               {postureMsg.urgency}
             </Badge>
-
-            <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
-              <span>{snapshot.activeTriggers} active alerts</span>
-              <span>·</span>
-              <span>{snapshot.criticalMaterials} critical materials</span>
-              <span>·</span>
-              <span>{snapshot.ecuNeedingAction} ECUs need action</span>
-            </div>
           </div>
         </div>
 
