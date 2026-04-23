@@ -8,7 +8,7 @@
  * arrays stay empty and pages render their empty states.
  */
 
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -43,6 +43,10 @@ interface DataContextType {
   clusterInfo: typeof clusterInfo;
   // Source indicator
   dataSource: "supabase" | "mock" | "none";
+  // Test mode controls
+  isZeroTestMode: boolean;
+  enableZeroTestMode: () => void;
+  disableZeroTestMode: () => void;
 }
 
 const DataContext = createContext<DataContextType | null>(null);
@@ -90,6 +94,8 @@ function transformMaterial(m: Material): CriticalMaterial {
 // ============================================================
 
 export function DataProvider({ children }: { children: React.ReactNode }) {
+  const [isZeroTestMode, setIsZeroTestMode] = useState(false);
+
   // Fetch materials from Supabase
   const materialsQuery = useQuery({
     queryKey: ["data-provider-materials"],
@@ -216,6 +222,29 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     const hasFallbackData = useFallbackMaterials || useFallbackEcus || useFallbackTriggers;
 
+    const effectiveDataSource = hasSupabaseMaterials || hasSupabaseEcus || hasSupabaseTriggers
+      ? "supabase"
+      : hasFallbackData
+      ? "mock"
+      : "none";
+
+    if (isZeroTestMode) {
+      return {
+        materials: [],
+        materialsRaw: [],
+        materialsLoading: false,
+        ecuInventory: [],
+        ecusLoading: false,
+        circularTriggers: [],
+        triggersLoading: false,
+        clusterInfo,
+        dataSource: effectiveDataSource,
+        isZeroTestMode,
+        enableZeroTestMode: () => setIsZeroTestMode(true),
+        disableZeroTestMode: () => setIsZeroTestMode(false),
+      };
+    }
+
     return {
       materials,
       materialsRaw,
@@ -225,13 +254,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       circularTriggers: circularTriggersData,
       triggersLoading: triggersQuery.isLoading,
       clusterInfo,
-      dataSource: hasSupabaseMaterials || hasSupabaseEcus || hasSupabaseTriggers
-        ? "supabase"
-        : hasFallbackData
-        ? "mock"
-        : "none",
+      dataSource: effectiveDataSource,
+      isZeroTestMode,
+      enableZeroTestMode: () => setIsZeroTestMode(true),
+      disableZeroTestMode: () => setIsZeroTestMode(false),
     };
-  }, [materialsQuery.data, materialsQuery.isLoading, ecusQuery.data, ecusQuery.isLoading, triggersQuery.data, triggersQuery.isLoading]);
+  }, [materialsQuery.data, materialsQuery.isLoading, ecusQuery.data, ecusQuery.isLoading, triggersQuery.data, triggersQuery.isLoading, isZeroTestMode]);
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }
