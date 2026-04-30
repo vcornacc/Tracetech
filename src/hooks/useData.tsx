@@ -58,8 +58,9 @@ function isMissingSupabaseRelationError(error: unknown) {
 
   const code = "code" in error ? String(error.code) : "";
   const message = "message" in error ? String(error.message) : "";
+  const status = "status" in error ? Number(error.status) : 0;
 
-  return code === "PGRST205" || /schema cache|could not find the table|404/i.test(message);
+  return status === 404 || code === "PGRST205" || /schema cache|could not find the table|404/i.test(message);
 }
 
 // ============================================================
@@ -104,10 +105,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         .from("materials")
         .select("*")
         .order("yale_score", { ascending: false });
-      if (error) throw error;
+      if (error) {
+        if (isMissingSupabaseRelationError(error)) {
+          return [] as Material[];
+        }
+        throw error;
+      }
       return data as Material[];
     },
-    retry: 1,
+    retry: false,
     staleTime: 5 * 60 * 1000, // 5 min
   });
 
@@ -119,10 +125,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         .from("ecus")
         .select("*, ecu_models(model_code, description), ecu_materials(*, materials(name, cluster, recycle_rate, price_per_kg))")
         .order("ecu_code");
-      if (error) throw error;
+      if (error) {
+        if (isMissingSupabaseRelationError(error)) {
+          return [];
+        }
+        throw error;
+      }
       return data;
     },
-    retry: 1,
+    retry: false,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -134,10 +145,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         .from("circular_triggers")
         .select("*")
         .order("triggered_at", { ascending: false });
-      if (error) throw error;
+      if (error) {
+        if (isMissingSupabaseRelationError(error)) {
+          return [];
+        }
+        throw error;
+      }
       return data;
     },
-    retry: 1,
+    retry: false,
     staleTime: 5 * 60 * 1000,
   });
 

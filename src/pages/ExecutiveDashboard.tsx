@@ -53,8 +53,9 @@ function isMissingSupabaseRelationError(error: unknown) {
 
   const code = "code" in error ? String(error.code) : "";
   const message = "message" in error ? String(error.message) : "";
+  const status = "status" in error ? Number(error.status) : 0;
 
-  return code === "PGRST205" || /schema cache|could not find the table|404/i.test(message);
+  return status === 404 || code === "PGRST205" || /schema cache|could not find the table|404/i.test(message);
 }
 
 type AlertLogRow = Tables<"alert_log">;
@@ -241,7 +242,7 @@ export default function ExecutiveDashboard() {
       id: `cross-${crossing.materialName}`,
       severity: crossing.projectedTier === "critical" ? "critical" : "high",
       label: `${crossing.materialName} crossing risk threshold`,
-      description: `Projected to move from ${crossing.currentTier} to ${crossing.projectedTier} in ${crossing.daysUntilCrossing} days (delta ${crossing.riskDelta.toFixed(1)}).`,
+      description: `Projected to move from ${crossing.currentTier} to ${crossing.projectedTier} in ${crossing.daysUntilCrossing} days (delta ${Number(crossing.riskDelta ?? 0).toFixed(1)}).`,
       timestamp: new Date().toISOString(),
       affectedECUs: 0,
     })),
