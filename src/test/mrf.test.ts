@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { parseBOMFromCSV, matchBOMToMaterials } from "@/lib/bomParser";
 import { computeMaterialRiskFactor, applyScenario, BOM_SCENARIOS } from "@/lib/materialRiskFactor";
+import { predictMaterialCriticality } from "@/lib/materialCriticalityModel";
 import type { CriticalMaterial } from "@/data/materialsData";
 
 describe("BOM Parser", () => {
@@ -43,6 +44,16 @@ Cobalt,0.85`;
     const matched = matchBOMToMaterials(bom, catalog);
     expect(matched.matched_count).toBe(2);
     expect(matched.rows[0].matched_material_id).toBe("cobalt");
+  });
+
+  it("should auto-normalize semicolon delimiter and quantity units", () => {
+    const csv = `Material;Qty;Unit\nCopper;1,5;kg\nCobalt;800;mg`;
+    const bom = parseBOMFromCSV(csv);
+
+    expect(bom.rows).toHaveLength(2);
+    expect(bom.rows[0].quantity_grams).toBe(1500);
+    expect(bom.rows[1].quantity_grams).toBeCloseTo(0.8, 6);
+    expect(bom.total_grams).toBeCloseTo(1500.8, 6);
   });
 });
 
@@ -154,5 +165,33 @@ describe("Material Risk Factor Engine", () => {
     expect(result.materialRiskFactor).toBeLessThanOrEqual(100);
     // All individual factors should be 0-100
     expect(result.factors.every((f) => f.score >= 0 && f.score <= 100)).toBe(true);
+  });
+});
+
+describe("Material Criticality Prediction Model", () => {
+  it("should classify cobalt as predicted critical", () => {
+    const cobalt: CriticalMaterial = {
+      name: "Cobalt",
+      casNumber: "7440-48-4",
+      gramsPerCircuit: 0.001,
+      yaleScore: 82,
+      euSRxEI: 4.2,
+      cluster: "systemic",
+      hhi: 3800,
+      recycleRate: 12,
+      topProducers: ["Congo (DRC)", "Russia"],
+      riskProfile: [
+        { subject: "Supply Risk", value: 92 },
+        { subject: "Geopolitical", value: 95 },
+        { subject: "Price Vol.", value: 78 },
+        { subject: "Recycling Gap", value: 85 },
+        { subject: "ESG Risk", value: 90 },
+        { subject: "HHI Concentration", value: 88 },
+      ],
+    };
+
+    const prediction = predictMaterialCriticality(cobalt);
+    expect(prediction.isCritical).toBe(true);
+    expect(prediction.probability).toBeGreaterThan(0.6);
   });
 });

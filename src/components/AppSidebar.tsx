@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, Database, Cpu, Zap,
   DollarSign, LogOut, Settings, Target,
-  FlaskConical, FileUp, Globe, Hexagon, Rocket, Bell,
+  FlaskConical, FileUp, Globe, Hexagon,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,10 +26,8 @@ const operativeNav = [
 
 const strategicNav = [
   { title: "Executive Dashboard", url: "/executive", icon: Globe },
-  { title: "Investor Demo", url: "/investor-demo", icon: Rocket },
   { title: "Financial Engine", url: "/financial", icon: DollarSign },
   { title: "HaaS Readiness", url: "/haas", icon: Target },
-  { title: "Alert History", url: "/alerts", icon: Bell },
 ];
 
 const layers = [

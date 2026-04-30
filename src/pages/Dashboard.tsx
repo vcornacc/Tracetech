@@ -13,6 +13,7 @@ import {
   TrendingUp,
   RotateCcw,
   RefreshCw,
+  Brain,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -32,6 +33,7 @@ import { useData } from "@/hooks/useData";
 import { downloadDashboardCSV, downloadDashboardReport } from "@/lib/reportDownloads";
 import { DataPageSkeleton } from "@/components/DataPageSkeleton";
 import { buildPortfolioSnapshot } from "@/lib/dataSchema";
+import { predictPortfolioCriticality } from "@/lib/materialCriticalityModel";
 
 const clusterColors: Record<string, string> = Object.fromEntries(
   Object.entries(clusterInfo).map(([k, v]) => [k, v.color])
@@ -68,6 +70,11 @@ export default function Dashboard() {
   const snapshot = useMemo(
     () => buildPortfolioSnapshot(criticalMaterials, ecuInventory, circularTriggers),
     [criticalMaterials, ecuInventory, circularTriggers]
+  );
+
+  const criticalitySummary = useMemo(
+    () => predictPortfolioCriticality(criticalMaterials),
+    [criticalMaterials]
   );
 
   if (materialsLoading) {
@@ -144,7 +151,7 @@ export default function Dashboard() {
         </Card>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <MetricCard
           title="Tracked Materials"
           value={snapshot.totalMaterials}
@@ -176,6 +183,14 @@ export default function Dashboard() {
           icon={<TrendingUp className="w-5 h-5" />}
           variant="amber"
           href="/executive"
+        />
+        <MetricCard
+          title="Predicted Critical"
+          value={criticalitySummary.predictedCriticalCount}
+          subtitle={`${Math.round(criticalitySummary.avgProbability * 100)}% avg probability`}
+          icon={<Brain className="w-5 h-5" />}
+          variant="default"
+          href="/materials"
         />
       </div>
 
@@ -279,6 +294,49 @@ export default function Dashboard() {
                     {trigger.affectedECUs} ECUs - {trigger.affectedMaterials.join(", ")}
                   </p>
                 </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Brain className="w-4 h-4 text-primary" />
+            Material Criticality Prediction
+          </CardTitle>
+          <p className="text-xs text-muted-foreground">
+            Predicted critical vs non-critical classification based on risk features.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+            <div className="p-3 rounded-lg bg-secondary/30">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Critical (predicted)</p>
+              <p className="text-xl font-bold mt-1">{criticalitySummary.predictedCriticalCount}</p>
+            </div>
+            <div className="p-3 rounded-lg bg-secondary/30">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Model confidence</p>
+              <p className="text-xl font-bold mt-1">{criticalitySummary.avgConfidence}%</p>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            {criticalitySummary.topPredictedCritical.length === 0 && (
+              <p className="text-xs text-muted-foreground">No material currently predicted as critical.</p>
+            )}
+            {criticalitySummary.topPredictedCritical.map((item) => (
+              <div key={item.materialName} className="p-3 rounded-lg bg-secondary/20">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium">{item.materialName}</p>
+                  <span className="text-[10px] font-mono text-destructive">
+                    {Math.round(item.probability * 100)}%
+                  </span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {item.topDrivers.join(" | ")}
+                </p>
               </div>
             ))}
           </div>
