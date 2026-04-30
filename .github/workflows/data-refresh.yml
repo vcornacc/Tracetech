@@ -1,0 +1,49 @@
+name: TraceTech Data Refresh
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate required secrets
+        env:
+          VITE_SUPABASE_URL: ${{ secrets['VITE_SUPABASE_URL'] }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets['SUPABASE_SERVICE_ROLE_KEY'] }}
+          LME_API_URL: ${{ secrets['LME_API_URL'] }}
+          USGS_CSV_URL: ${{ secrets['USGS_CSV_URL'] }}
+          GPR_CSV_URL: ${{ secrets['GPR_CSV_URL'] }}
+        run: |
+          test -n "$VITE_SUPABASE_URL"
+          test -n "$SUPABASE_SERVICE_ROLE_KEY"
+          test -n "$LME_API_URL"
+          test -n "$USGS_CSV_URL"
+          test -n "$GPR_CSV_URL"
+
+      - name: Run automated refresh
+        env:
+          VITE_SUPABASE_URL: ${{ secrets['VITE_SUPABASE_URL'] }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets['SUPABASE_SERVICE_ROLE_KEY'] }}
+          LME_API_URL: ${{ secrets['LME_API_URL'] }}
+          LME_API_KEY: ${{ secrets['LME_API_KEY'] }}
+          USGS_CSV_URL: ${{ secrets['USGS_CSV_URL'] }}
+          GPR_CSV_URL: ${{ secrets['GPR_CSV_URL'] }}
+        run: npm run data:refresh

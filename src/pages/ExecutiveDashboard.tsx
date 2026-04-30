@@ -1,6 +1,9 @@
+import { useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
 import { MetricCard } from "@/components/MetricCard";
 import {
   Globe,
@@ -8,9 +11,11 @@ import {
   Recycle,
   Shield,
   Activity,
+  TrendingUp,
   BarChart3,
   Cpu,
   DollarSign,
+  BellOff,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -24,9 +29,15 @@ import {
 } from "recharts";
 import { clusterInfo } from "@/data/materialsData";
 import { useData } from "@/hooks/useData";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { DataPageSkeleton } from "@/components/DataPageSkeleton";
 import { DownloadReportSection } from "@/components/DownloadReportSection";
 import { downloadExecutiveCSV, downloadDashboardReport } from "@/lib/reportDownloads";
+import { buildPortfolioSnapshot, normalizeECU, normalizeMaterial } from "@/lib/dataSchema";
+import { generatePredictiveInsights } from "@/lib/predictiveEngine";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 
 const riskColors: Record<string, string> = {
   low: "hsl(160,70%,45%)",
@@ -35,7 +46,35 @@ const riskColors: Record<string, string> = {
   critical: "hsl(0,72%,50%)",
 };
 
+function isMissingSupabaseRelationError(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return false;
+  }
+
+  const code = "code" in error ? String(error.code) : "";
+  const message = "message" in error ? String(error.message) : "";
+
+  return code === "PGRST205" || /schema cache|could not find the table|404/i.test(message);
+}
+
+type AlertLogRow = Tables<"alert_log">;
+
+interface ExecutiveAlertItem {
+  id: string;
+  severity: "low" | "medium" | "high" | "critical";
+  label: string;
+  description: string;
+  timestamp: string;
+  affectedECUs: number;
+  source: "persisted" | "live" | "predicted";
+  acknowledgedAt?: string | null;
+  snoozedUntil?: string | null;
+}
+
 export default function ExecutiveDashboard() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const {
     materials: criticalMaterials,
     ecuInventory,
@@ -46,9 +85,114 @@ export default function ExecutiveDashboard() {
     dataSource,
   } = useData();
 
+  const alertLogQuery = useQuery({
+    queryKey: ["executive-alert-log"],
+    queryFn: async () => {
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from("alert_log")
+        .select("*")
+        .is("resolved_at", null)
+        .or(`snoozed_until.is.null,snoozed_until.lt.${now}`)
+        .order("created_at", { ascending: false })
+        .limit(12);
+
+      if (error) {
+        if (isMissingSupabaseRelationError(error)) {
+          return [] as AlertLogRow[];
+        }
+        throw error;
+      }
+
+      return (data ?? []) as AlertLogRow[];
+    },
+    retry: 1,
+    staleTime: 3 * 60 * 1000,
+  });
+
+  const acknowledgeAlertMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const payload: Tables<"alert_log">["Update"] = {
+        acknowledged_at: new Date().toISOString(),
+      };
+
+      if (user?.id) {
+        payload.acknowledged_by = user.id;
+      }
+
+      const { error } = await supabase.from("alert_log").update(payload).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["executive-alert-log"] });
+      toast({ title: "Alert acknowledged", description: "Alert has been marked as acknowledged." });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to acknowledge alert",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const resolveAlertMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from("alert_log")
+        .update({ resolved_at: new Date().toISOString() })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["executive-alert-log"] });
+      toast({ title: "Alert resolved", description: "Alert has been moved out of active monitoring." });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to resolve alert",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const snoozeAlertMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const snoozedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+      const { error } = await supabase
+        .from("alert_log")
+        .update({ snoozed_until: snoozedUntil })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["executive-alert-log"] });
+      toast({ title: "Alert snoozed", description: "Alert hidden for 24 hours." });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Unable to snooze alert",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   if (materialsLoading || ecusLoading || triggersLoading) {
     return <DataPageSkeleton cards={6} rows={8} />;
   }
+
+  const snapshot = useMemo(
+    () => buildPortfolioSnapshot(criticalMaterials, ecuInventory, circularTriggers),
+    [criticalMaterials, ecuInventory, circularTriggers]
+  );
+
+  const predictive = useMemo(() => {
+    const normalizedMaterials = criticalMaterials.map(normalizeMaterial);
+    const normalizedEcus = ecuInventory.map(normalizeECU);
+    return generatePredictiveInsights(normalizedMaterials, normalizedEcus, snapshot, circularTriggers);
+  }, [criticalMaterials, ecuInventory, snapshot, circularTriggers]);
 
   const clusterBarData = Object.entries(clusterInfo).map(([key, info]) => ({
     name: info.label.split(" ").slice(0, 2).join(" "),
@@ -90,6 +234,54 @@ export default function ExecutiveDashboard() {
     .slice(0, 4);
 
   const activeAlerts = circularTriggers.filter((trigger) => trigger.status === "active" || trigger.status === "monitoring");
+  const persistedAlerts = alertLogQuery.data ?? [];
+
+  const predictedAlertFeed = [
+    ...predictive.thresholdCrossings.slice(0, 4).map((crossing) => ({
+      id: `cross-${crossing.materialName}`,
+      severity: crossing.projectedTier === "critical" ? "critical" : "high",
+      label: `${crossing.materialName} crossing risk threshold`,
+      description: `Projected to move from ${crossing.currentTier} to ${crossing.projectedTier} in ${crossing.daysUntilCrossing} days (delta ${crossing.riskDelta.toFixed(1)}).`,
+      timestamp: new Date().toISOString(),
+      affectedECUs: 0,
+    })),
+    ...predictive.anomalies
+      .filter((anomaly) => anomaly.severity === "critical")
+      .slice(0, 3)
+      .map((anomaly) => ({
+        id: `anomaly-${anomaly.materialName}-${anomaly.dimension}`,
+        severity: "high",
+        label: `${anomaly.materialName} anomaly in ${anomaly.dimension}`,
+        description: anomaly.description,
+        timestamp: new Date().toISOString(),
+        affectedECUs: 0,
+      })),
+  ];
+
+  const executiveAlerts: ExecutiveAlertItem[] = persistedAlerts.length > 0
+    ? persistedAlerts.map((alert) => ({
+        id: alert.id,
+        severity: alert.severity,
+        label: alert.title,
+        description: alert.description ?? "No description",
+        timestamp: alert.created_at,
+        affectedECUs: Number((alert.metadata as Record<string, unknown> | null)?.affected_ecus ?? 0),
+        source: "persisted",
+        acknowledgedAt: alert.acknowledged_at,
+        snoozedUntil: alert.snoozed_until,
+      }))
+    : [
+        ...activeAlerts.map((alert) => ({
+          id: alert.id,
+          severity: alert.severity,
+          label: alert.label,
+          description: alert.description,
+          timestamp: alert.timestamp,
+          affectedECUs: alert.affectedECUs,
+          source: "live" as const,
+        })),
+        ...predictedAlertFeed.map((alert) => ({ ...alert, source: "predicted" as const })),
+      ].slice(0, 12);
 
   const totalECU = ecuInventory.length;
   const recoveredECU = ecuInventory.filter((ecu) => ecu.status === "recovered").length;
@@ -102,6 +294,33 @@ export default function ExecutiveDashboard() {
   const highExposure = criticalMaterials.filter(
     (material) => material.yaleScore >= 60 && (material.cluster === "systemic" || material.cluster === "product")
   ).length;
+
+  const avgVelocity = predictive.momentum.length > 0
+    ? Math.round((predictive.momentum.reduce((sum, item) => sum + item.velocity, 0) / predictive.momentum.length) * 10) / 10
+    : 0;
+
+  const criticalAnomalies = predictive.anomalies.filter((a) => a.severity === "critical").length;
+
+  const targetVsActual = [
+    {
+      label: "System Health",
+      current: predictive.systemHealth,
+      target: 80,
+      unit: "/100",
+    },
+    {
+      label: "Avg Risk Velocity",
+      current: Math.max(0, Math.round((2 - avgVelocity) * 25)),
+      target: 75,
+      unit: " index",
+    },
+    {
+      label: "Threshold Stability",
+      current: Math.max(0, 100 - predictive.thresholdCrossings.length * 20),
+      target: 90,
+      unit: "%",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -125,6 +344,15 @@ export default function ExecutiveDashboard() {
         <MetricCard title="Recovery Rate" value={`${recoveryRate}%`} subtitle="live portfolio" icon={<Recycle className="w-5 h-5" />} variant="success" href="/decision-engine" />
         <MetricCard title="Avg Risk Score" value={`${avgRiskScore}/100`} subtitle="ECU portfolio" icon={<Shield className="w-5 h-5" />} variant="critical" href="/simulation" />
         <MetricCard title="CRM Value" value={`€${totalCrmValue.toLocaleString()}`} subtitle="recoverable" icon={<DollarSign className="w-5 h-5" />} variant="cyan" href="/financial" />
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <MetricCard title="System Health" value={`${predictive.systemHealth}/100`} subtitle="predictive signal" icon={<Shield className="w-5 h-5" />} variant="success" href="/executive" />
+        <MetricCard title="Portfolio 30d" value={predictive.portfolioForecast.projected30d.toUpperCase()} subtitle="forecast posture" icon={<TrendingUp className="w-5 h-5" />} variant="amber" href="/simulation" />
+        <MetricCard title="Portfolio 90d" value={predictive.portfolioForecast.projected90d.toUpperCase()} subtitle={predictive.portfolioForecast.trend} icon={<BarChart3 className="w-5 h-5" />} variant="critical" href="/simulation" />
+        <MetricCard title="Risk Velocity" value={avgVelocity.toFixed(1)} subtitle="avg monthly drift" icon={<Activity className="w-5 h-5" />} variant="amber" href="/materials" />
+        <MetricCard title="Crossings 90d" value={predictive.thresholdCrossings.length} subtitle="predicted tier shifts" icon={<AlertTriangle className="w-5 h-5" />} variant="critical" href="/simulation" />
+        <MetricCard title="Critical Anomalies" value={criticalAnomalies} subtitle="portfolio outliers" icon={<Cpu className="w-5 h-5" />} variant="cyan" href="/materials" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -194,17 +422,39 @@ export default function ExecutiveDashboard() {
       <Card className="border-border/50">
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-primary" />
+            Target vs Actual Monitoring
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {targetVsActual.map((row) => (
+              <div key={row.label} className="space-y-1">
+                <div className="flex justify-between text-xs">
+                  <span className="text-muted-foreground">{row.label}</span>
+                  <span className="font-mono">{row.current}{row.unit} / target {row.target}{row.unit}</span>
+                </div>
+                <Progress value={Math.min((row.current / row.target) * 100, 100)} className="h-1.5" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-accent" />
             Automatic Alert System
             <Badge variant="outline" className="text-[9px] bg-destructive/15 text-destructive border-destructive/30 ml-2">
-              {activeAlerts.length} active
+              {executiveAlerts.length} active
             </Badge>
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {activeAlerts.length === 0 && <p className="text-xs text-muted-foreground">No active alerts in the current live dataset.</p>}
-            {activeAlerts.map((alert) => (
+            {executiveAlerts.length === 0 && <p className="text-xs text-muted-foreground">No active alerts in the current live dataset.</p>}
+            {executiveAlerts.map((alert) => (
               <div key={alert.id} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30">
                 <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
                   alert.severity === "critical" ? "bg-destructive animate-pulse" : alert.severity === "high" ? "bg-destructive" : "bg-accent"
@@ -213,12 +463,55 @@ export default function ExecutiveDashboard() {
                   <div className="flex items-center gap-2 mb-1">
                     <p className="text-xs font-medium">{alert.label}</p>
                     <Badge variant="outline" className="text-[8px]">{alert.severity.toUpperCase()}</Badge>
+                    {alert.source === "persisted" && alert.acknowledgedAt && (
+                      <Badge variant="outline" className="text-[8px] bg-primary/10 text-primary border-primary/30">ACK</Badge>
+                    )}
+                    {alert.source === "persisted" && alert.snoozedUntil && new Date(alert.snoozedUntil) > new Date() && (
+                      <Badge variant="outline" className="text-[8px] bg-muted text-muted-foreground border-muted-foreground/30">SNOOZED</Badge>
+                    )}
+                    {alert.source === "predicted" && (
+                      <Badge variant="outline" className="text-[8px] bg-accent/10 text-accent border-accent/30">PREDICTIVE</Badge>
+                    )}
                   </div>
                   <p className="text-[10px] text-muted-foreground">{alert.description}</p>
                   <div className="flex items-center gap-3 mt-1">
                     <span className="text-[9px] text-muted-foreground">ECU: {alert.affectedECUs}</span>
                     <span className="text-[9px] text-muted-foreground font-mono">{new Date(alert.timestamp).toLocaleDateString("en-US")}</span>
                   </div>
+                  {alert.source === "persisted" && (
+                    <div className="flex items-center gap-2 mt-2">
+                      {!alert.acknowledgedAt && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-6 text-[10px]"
+                          onClick={() => acknowledgeAlertMutation.mutate(alert.id)}
+                          disabled={acknowledgeAlertMutation.isPending || resolveAlertMutation.isPending || snoozeAlertMutation.isPending}
+                        >
+                          Acknowledge
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 text-[10px]"
+                        onClick={() => snoozeAlertMutation.mutate(alert.id)}
+                        disabled={acknowledgeAlertMutation.isPending || resolveAlertMutation.isPending || snoozeAlertMutation.isPending}
+                      >
+                        <BellOff className="w-3 h-3 mr-1" />
+                        Snooze 24h
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-6 text-[10px]"
+                        onClick={() => resolveAlertMutation.mutate(alert.id)}
+                        disabled={acknowledgeAlertMutation.isPending || resolveAlertMutation.isPending || snoozeAlertMutation.isPending}
+                      >
+                        Resolve
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

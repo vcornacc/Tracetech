@@ -1,0 +1,125 @@
+name: TraceTech Data Refresh Dry Run
+
+on:
+  schedule:
+    - cron: "15 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate required secrets
+        env:
+          VITE_SUPABASE_URL: ${{ secrets['VITE_SUPABASE_URL'] }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets['SUPABASE_SERVICE_ROLE_KEY'] }}
+          LME_API_URL: ${{ secrets['LME_API_URL'] }}
+          USGS_CSV_URL: ${{ secrets['USGS_CSV_URL'] }}
+          GPR_CSV_URL: ${{ secrets['GPR_CSV_URL'] }}
+        run: |
+          test -n "$VITE_SUPABASE_URL"
+          test -n "$SUPABASE_SERVICE_ROLE_KEY"
+          test -n "$LME_API_URL"
+          test -n "$USGS_CSV_URL"
+          test -n "$GPR_CSV_URL"
+
+      - name: Run dry-run refresh validation
+        env:
+          VITE_SUPABASE_URL: ${{ secrets['VITE_SUPABASE_URL'] }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets['SUPABASE_SERVICE_ROLE_KEY'] }}
+          LME_API_URL: ${{ secrets['LME_API_URL'] }}
+          LME_API_KEY: ${{ secrets['LME_API_KEY'] }}
+          USGS_CSV_URL: ${{ secrets['USGS_CSV_URL'] }}
+          GPR_CSV_URL: ${{ secrets['GPR_CSV_URL'] }}
+        run: npm run data:refresh:dry-run
+
+      - name: Open failure issue
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = "[ALERT] Nightly data refresh dry-run failed";
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            const existing = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: "open",
+              labels: "ops-alert",
+              per_page: 100,
+            });
+
+            const alreadyOpen = existing.data.find((issue) => issue.title === title);
+
+            if (alreadyOpen) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: alreadyOpen.number,
+                body: `Another dry-run failure detected at ${new Date().toISOString()}\n\nRun: ${runUrl}`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner,
+                repo,
+                title,
+                labels: ["ops-alert", "automation", "data-refresh"],
+                body: `Nightly dry-run for data refresh failed.\n\nRun: ${runUrl}\n\nAction required: review workflow logs and validate upstream data sources.`
+              });
+            }
+
+      - name: Close ops-alert issue on success
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const title = "[ALERT] Nightly data refresh dry-run failed";
+            const runUrl = `${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}`;
+
+            const existing = await github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: "open",
+              labels: "ops-alert",
+              per_page: 100,
+            });
+
+            const openIssue = existing.data.find((issue) => issue.title === title);
+            if (!openIssue) {
+              core.info("No open ops-alert issue to close.");
+              return;
+            }
+
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: openIssue.number,
+              body: `Dry-run check is back to green at ${new Date().toISOString()}\n\nRun: ${runUrl}`,
+            });
+
+            await github.rest.issues.update({
+              owner,
+              repo,
+              issue_number: openIssue.number,
+              state: "closed",
+            });

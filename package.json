@@ -14,6 +14,10 @@
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "test": "vitest run",
     "test:watch": "vitest",
+    "data:refresh": "node ./scripts/data-refresh.mjs",
+    "data:refresh:dry-run": "node ./scripts/data-refresh.mjs --dry-run",
+    "data:export": "node ./scripts/data-export.mjs",
+    "data:export:dry-run": "node ./scripts/data-export.mjs --dry-run",
     "auth:check": "node ./scripts/check-auth-email-config.mjs",
     "release:ready": "bash ./scripts/release-ready.sh",
     "release:publish": "bash ./scripts/release-publish.sh"

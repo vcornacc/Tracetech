@@ -511,6 +511,150 @@ export type Database = {
         }
         Relationships: []
       }
+      data_refresh_log: {
+        Row: {
+          id: string
+          source: string
+          status: string
+          started_at: string
+          finished_at: string
+          rows_affected: number
+          warning_count: number
+          error_message: string | null
+          details: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          source: string
+          status: string
+          started_at: string
+          finished_at: string
+          rows_affected?: number
+          warning_count?: number
+          error_message?: string | null
+          details?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          source?: string
+          status?: string
+          started_at?: string
+          finished_at?: string
+          rows_affected?: number
+          warning_count?: number
+          error_message?: string | null
+          details?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
+      alert_log: {
+        Row: {
+          id: string
+          trigger_id: string | null
+          material_id: string | null
+          severity: Database["public"]["Enums"]["trigger_severity"]
+          title: string
+          description: string | null
+          acknowledged_by: string | null
+          acknowledged_at: string | null
+          resolved_at: string | null
+          snoozed_until: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          trigger_id?: string | null
+          material_id?: string | null
+          severity?: Database["public"]["Enums"]["trigger_severity"]
+          title: string
+          description?: string | null
+          acknowledged_by?: string | null
+          acknowledged_at?: string | null
+          resolved_at?: string | null
+          snoozed_until?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          trigger_id?: string | null
+          material_id?: string | null
+          severity?: Database["public"]["Enums"]["trigger_severity"]
+          title?: string
+          description?: string | null
+          acknowledged_by?: string | null
+          acknowledged_at?: string | null
+          resolved_at?: string | null
+          snoozed_until?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alert_log_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_log_trigger_id_fkey"
+            columns: ["trigger_id"]
+            isOneToOne: false
+            referencedRelation: "circular_triggers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alert_log_acknowledged_by_fkey"
+            columns: ["acknowledged_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
+      scenario_history: {
+        Row: {
+          id: string
+          scenario_name: string
+          source: string
+          parameters: Json
+          kpi_snapshot: Json
+          created_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          scenario_name: string
+          source?: string
+          parameters?: Json
+          kpi_snapshot?: Json
+          created_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          scenario_name?: string
+          source?: string
+          parameters?: Json
+          kpi_snapshot?: Json
+          created_by?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenario_history_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          }
+        ]
+      }
     }
     Views: {
       v_cluster_distribution: {

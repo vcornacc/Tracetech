@@ -17,7 +17,9 @@ import ECUDetail from "./pages/ECUDetail";
 import DecisionEngine from "./pages/DecisionEngine";
 import FinancialEngine from "./pages/FinancialEngine";
 import ExecutiveDashboard from "./pages/ExecutiveDashboard";
+import InvestorDemo from "./pages/InvestorDemo";
 import HaaSReadiness from "./pages/HaaSReadiness";
+import AlertHistory from "./pages/AlertHistory";
 import NotFound from "./pages/NotFound";
 import Settings from "./pages/Settings";
 
@@ -50,7 +52,9 @@ const App = () => (
                 <Route path="/decision-engine" element={<ProtectedRoute><DecisionEngine /></ProtectedRoute>} />
                 <Route path="/financial" element={<ProtectedRoute><FinancialEngine /></ProtectedRoute>} />
                 <Route path="/executive" element={<ProtectedRoute><ExecutiveDashboard /></ProtectedRoute>} />
+                <Route path="/investor-demo" element={<ProtectedRoute><InvestorDemo /></ProtectedRoute>} />
                 <Route path="/haas" element={<ProtectedRoute><HaaSReadiness /></ProtectedRoute>} />
+                <Route path="/alerts" element={<ProtectedRoute><AlertHistory /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

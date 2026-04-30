@@ -34,9 +34,86 @@ Open in browser:
 - `npm run build`: production build
 - `npm run preview`: preview production build locally
 - `npm run test`: run tests
+- `npm run data:refresh:dry-run`: validate real-data connector mapping without writing to DB
+- `npm run data:refresh`: fetch real data and update material risk fields + price history
 - `npm run auth:check`: validate Supabase auth settings reachability and email setup checklist
 - `npm run release:ready`: one-command preflight (install, test, build)
 - `npm run release:publish`: run preflight then push `main` to trigger Pages deploy
+
+## Real Data Refresh (LME + USGS + GPR)
+
+TraceTech now includes an automated ETL script at `scripts/data-refresh.mjs`.
+
+Required environment variables:
+
+- `VITE_SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `LME_API_URL` (returns JSON with `materials[]`)
+- `USGS_CSV_URL` (CSV for reserves)
+- `GPR_CSV_URL` (CSV for geopolitical scores)
+
+Optional:
+
+- `LME_API_KEY` (if your LME endpoint requires bearer auth)
+
+Expected LME payload shape:
+
+```json
+{
+	"materials": [
+		{
+			"materialName": "Copper",
+			"pricePerKg": 8.91,
+			"volatility30d": 12.4,
+			"volatility1y": 19.8,
+			"sourceDate": "2026-04-30"
+		}
+	]
+}
+```
+
+The script logs each run in `data_refresh_log` and writes warnings if one source fails while continuing with partial updates.
+
+### Automated Daily Refresh (Zero Manual Ops)
+
+GitHub Actions workflow: `.github/workflows/data-refresh.yml`
+
+- Runs every day at 06:00 UTC
+- Supports manual run via `workflow_dispatch`
+- Executes `npm run data:refresh`
+
+Required GitHub repository secrets:
+
+- `VITE_SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `LME_API_URL`
+- `USGS_CSV_URL`
+- `GPR_CSV_URL`
+
+Optional secret:
+
+- `LME_API_KEY`
+
+### Nightly Dry-Run and Failure Alert
+
+GitHub Actions workflow: `.github/workflows/data-refresh-dry-run.yml`
+
+- Runs every day at 02:15 UTC
+- Executes `npm run data:refresh:dry-run`
+- If the dry-run fails, it opens or updates a GitHub issue labeled `ops-alert`
+- If the dry-run is successful and an `ops-alert` issue is open, it auto-comments and closes that issue
+
+This gives automated early warning before production refresh windows.
+
+### Investor Demo Persistence
+
+Investor Demo one-click execution now does three automatic actions:
+
+- runs deterministic scenario,
+- exports TXT and CSV reports,
+- stores a `scenario_history` snapshot when an authenticated user session is present.
+
+If no authenticated session is present, export still works and persistence is skipped safely.
 
 ## Auth and Email Verification
 

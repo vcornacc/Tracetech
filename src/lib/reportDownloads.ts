@@ -1,6 +1,8 @@
 import { criticalMaterials, clusterInfo } from "@/data/materialsData";
 import { haasMetrics } from "@/data/ecuData";
 import type { CriticalMaterial } from "@/data/materialsData";
+import type { PortfolioSnapshot } from "@/lib/dataSchema";
+import type { SimulationResult } from "@/lib/simulationEngine";
 
 function downloadFile(content: string, filename: string, mimeType: string) {
   const blob = new Blob(["\uFEFF" + content], { type: `${mimeType};charset=utf-8` });
@@ -265,4 +267,111 @@ export function downloadHaaSReport() {
     "═══════════════════════════════════════════════════════════════",
   ];
   downloadFile(lines.join("\n"), `CRIS_HaaS_Report_${timestamp()}.txt`, "text/plain");
+}
+
+// ── Investor Demo Export ──
+export interface RefreshHealthStats {
+  total: number;
+  successes: number;
+  failures: number;
+  successRate: number;
+  lastRun: string | null;
+}
+
+export function downloadInvestorDemoReport(
+  baseline: PortfolioSnapshot,
+  result: SimulationResult,
+  scenarioLabel: string,
+  refreshHealth?: RefreshHealthStats
+) {
+  const lines = [
+    "═══════════════════════════════════════════════════════════════",
+    "  TraceTech — Investor Demo Report",
+    `  Generated: ${new Date().toLocaleString("en-US")}`,
+    "═══════════════════════════════════════════════════════════════",
+    "",
+    "1. BASELINE SNAPSHOT",
+    "───────────────────────────────────────────────────────────────",
+    `  Portfolio posture:         ${baseline.riskPosture}`,
+    `  Tracked materials:         ${baseline.totalMaterials}`,
+    `  Tracked ECUs:              ${baseline.totalECUs}`,
+    `  Avg composite risk:        ${baseline.avgCompositeRisk}`,
+    `  Total CRM value exposure:  €${Math.round(baseline.totalCrmValue).toLocaleString("en-US")}`,
+    "",
+    "2. STRESS SCENARIO",
+    "───────────────────────────────────────────────────────────────",
+    `  Scenario:                  ${scenarioLabel}`,
+    `  Severity:                  ${result.severity.toUpperCase()}`,
+    `  Cost impact:               €${Math.round(result.impactSummary.totalCostImpactEuro).toLocaleString("en-US")}`,
+    `  Cost change:               ${result.impactSummary.costChangePct.toFixed(2)}%`,
+    `  Risk score delta:          ${result.impactSummary.riskScoreChange.toFixed(1)}`,
+    `  Affected ECUs:             ${result.impactSummary.affectedEcusCount}`,
+    `  Supply interruption risk:  ${result.impactSummary.supplyChainInterruptionRisk}%`,
+    "",
+    "3. TOP RECOMMENDATIONS",
+    "───────────────────────────────────────────────────────────────",
+    ...result.recommendations.slice(0, 5).map((rec) => `  • ${rec}`),
+    "",
+    ...(refreshHealth
+      ? [
+          "4. DATA RELIABILITY (last 7 days)",
+          "───────────────────────────────────────────────────────────────",
+          `  Refresh runs:              ${refreshHealth.total}`,
+          `  Successful:                ${refreshHealth.successes}`,
+          `  Failed:                    ${refreshHealth.failures}`,
+          `  Success rate:              ${refreshHealth.successRate}%`,
+          `  Last run:                  ${refreshHealth.lastRun ? new Date(refreshHealth.lastRun).toLocaleString("en-US") : "N/A"}`,
+          "",
+        ]
+      : []),
+    "═══════════════════════════════════════════════════════════════",
+    "  End of Report",
+    "═══════════════════════════════════════════════════════════════",
+  ];
+
+  downloadFile(lines.join("\n"), `TraceTech_Investor_Demo_${timestamp()}.txt`, "text/plain");
+}
+
+export function downloadInvestorDemoCSV(
+  baseline: PortfolioSnapshot,
+  result: SimulationResult,
+  scenarioLabel: string,
+  refreshHealth?: RefreshHealthStats
+) {
+  const rows = [
+    ["TraceTech Investor Demo Export"],
+    [`Date: ${timestamp()}`],
+    [],
+    ["Baseline KPI", "Value"],
+    ["Portfolio posture", baseline.riskPosture],
+    ["Tracked materials", baseline.totalMaterials],
+    ["Tracked ECUs", baseline.totalECUs],
+    ["Avg composite risk", baseline.avgCompositeRisk],
+    ["CRM value exposure", baseline.totalCrmValue],
+    [],
+    ["Scenario KPI", "Value"],
+    ["Scenario", scenarioLabel],
+    ["Severity", result.severity],
+    ["Cost impact euro", result.impactSummary.totalCostImpactEuro],
+    ["Cost change pct", result.impactSummary.costChangePct],
+    ["Risk score delta", result.impactSummary.riskScoreChange],
+    ["Affected ECUs", result.impactSummary.affectedEcusCount],
+    ["Supply interruption risk", result.impactSummary.supplyChainInterruptionRisk],
+    [],
+    ["Recommendations"],
+    ...result.recommendations.slice(0, 5).map((rec) => [rec]),
+    ...(refreshHealth
+      ? [
+          [],
+          ["Data Reliability KPI (last 7 days)", "Value"],
+          ["Refresh runs", refreshHealth.total],
+          ["Successful", refreshHealth.successes],
+          ["Failed", refreshHealth.failures],
+          ["Success rate", `${refreshHealth.successRate}%`],
+          ["Last run", refreshHealth.lastRun ? new Date(refreshHealth.lastRun).toLocaleString("en-US") : "N/A"],
+        ]
+      : []),
+  ];
+
+  downloadFile(rows.map((r) => r.join(";")).join("\n"), `TraceTech_Investor_Demo_${timestamp()}.csv`, "text/csv");
 }

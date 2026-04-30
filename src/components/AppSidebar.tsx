@@ -1,10 +1,12 @@
 import {
   LayoutDashboard, Database, Cpu, Zap,
   DollarSign, LogOut, Settings, Target,
-  FlaskConical, FileUp, Globe, Hexagon,
+  FlaskConical, FileUp, Globe, Hexagon, Rocket, Bell,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarFooter,
@@ -24,8 +26,10 @@ const operativeNav = [
 
 const strategicNav = [
   { title: "Executive Dashboard", url: "/executive", icon: Globe },
+  { title: "Investor Demo", url: "/investor-demo", icon: Rocket },
   { title: "Financial Engine", url: "/financial", icon: DollarSign },
   { title: "HaaS Readiness", url: "/haas", icon: Target },
+  { title: "Alert History", url: "/alerts", icon: Bell },
 ];
 
 const layers = [
@@ -37,6 +41,32 @@ const layers = [
 export function AppSidebar() {
   const { user, signOut, roles } = useAuth();
 
+  // Refresh health: query last data_refresh_log row to show status dot
+  const { data: lastRefresh } = useQuery({
+    queryKey: ["sidebar-refresh-health"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("data_refresh_log")
+        .select("status, finished_at")
+        .order("finished_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+  });
+
+  const refreshDotColor =
+    lastRefresh == null ? "bg-muted-foreground/30"
+    : lastRefresh.status === "error" ? "bg-destructive animate-pulse"
+    : lastRefresh.status === "warning" ? "bg-accent"
+    : "bg-green-500";
+
+  const refreshDotTitle =
+    lastRefresh == null ? "No refresh data"
+    : `Last refresh: ${lastRefresh.status} (${new Date(lastRefresh.finished_at).toLocaleString("en-US")})`;
+
   return (
     <Sidebar className="border-r border-border/50">
       <div className="p-4 border-b border-border/50">
@@ -44,10 +74,14 @@ export function AppSidebar() {
           <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center shrink-0">
             <Hexagon className="w-4 h-4 text-primary" />
           </div>
-          <div>
+          <div className="flex-1 min-w-0">
             <h2 className="text-sm font-bold tracking-tight text-gradient-cyan">TraceTech</h2>
             <p className="text-[10px] text-muted-foreground leading-tight">CRM Intelligence</p>
           </div>
+          <div
+            className={`w-2 h-2 rounded-full shrink-0 ${refreshDotColor}`}
+            title={refreshDotTitle}
+          />
         </div>
       </div>
 
