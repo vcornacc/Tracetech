@@ -180,10 +180,6 @@ export default function ExecutiveDashboard() {
     },
   });
 
-  if (materialsLoading || ecusLoading || triggersLoading) {
-    return <DataPageSkeleton cards={6} rows={8} />;
-  }
-
   const snapshot = useMemo(
     () => buildPortfolioSnapshot(criticalMaterials, ecuInventory, circularTriggers),
     [criticalMaterials, ecuInventory, circularTriggers]
@@ -194,6 +190,10 @@ export default function ExecutiveDashboard() {
     const normalizedEcus = ecuInventory.map(normalizeECU);
     return generatePredictiveInsights(normalizedMaterials, normalizedEcus, snapshot, circularTriggers);
   }, [criticalMaterials, ecuInventory, snapshot, circularTriggers]);
+
+  if (materialsLoading || ecusLoading || triggersLoading) {
+    return <DataPageSkeleton cards={6} rows={8} />;
+  }
 
   const clusterBarData = Object.entries(clusterInfo).map(([key, info]) => ({
     name: info.label.split(" ").slice(0, 2).join(" "),
