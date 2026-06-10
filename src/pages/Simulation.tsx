@@ -45,10 +45,6 @@ export default function Simulation() {
   const [result, setResult] = useState<SimulationResult | null>(null);
   const [isRunning, setIsRunning] = useState(false);
 
-  if (materialsLoading || ecusLoading) {
-    return <DataPageSkeleton cards={3} rows={6} />;
-  }
-
   // Build ECU-material maps from the legacy ECU data
   const ecuMaterialData = useMemo(() => {
     const flatEntries: { material_id: string; ecu_id: string; weight_grams: number }[] = [];
@@ -66,6 +62,10 @@ export default function Simulation() {
     }
     return buildEcuMaterialMaps(flatEntries);
   }, [ecuInventory, materialsRaw]);
+
+  if (materialsLoading || ecusLoading) {
+    return <DataPageSkeleton cards={3} rows={6} />;
+  }
 
   const handleRunSimulation = () => {
     const template = SCENARIO_TEMPLATES.find((t) => t.id === selectedTemplate);
